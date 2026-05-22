@@ -446,7 +446,7 @@ function renderInventory() {
                   <tr>
                     <td>
                       <div style="display:flex;align-items:center;gap:.65rem">
-                        <div style="font-size:1.5rem;width:36px;height:36px;background:linear-gradient(135deg,#f0f4ff,#e0e9ff);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0">${p.emoji||categoryEmoji(p.category)}</div>
+                        <div style="font-size:1.5rem;width:36px;height:36px;background:linear-gradient(135deg,#f5f5f5,#eeeeee);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0">${p.emoji||categoryEmoji(p.category)}</div>
                         <div style="font-weight:600;font-size:.875rem">${p.name}</div>
                       </div>
                     </td>
@@ -938,7 +938,7 @@ function renderCustDashboard() {
           <div style="display:flex;flex-direction:column">
             ${Products.all().slice(0,5).map(p=>`
               <div style="display:flex;align-items:center;gap:.75rem;padding:.6rem 0;border-bottom:1px solid var(--border-light)">
-                <div style="font-size:1.4rem;width:36px;height:36px;background:linear-gradient(135deg,#f0f4ff,#e0e9ff);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0">${p.emoji||categoryEmoji(p.category)}</div>
+                <div style="font-size:1.4rem;width:36px;height:36px;background:linear-gradient(135deg,#f5f5f5,#eeeeee);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0">${p.emoji||categoryEmoji(p.category)}</div>
                 <div style="flex:1;min-width:0">
                   <div style="font-weight:600;font-size:.85rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</div>
                   <div style="font-size:.75rem;color:var(--primary);font-weight:700">${fmt(p.price)}</div>
@@ -1549,7 +1549,7 @@ function renderMobileAdminDashboard() {
   set('mobile-admin-content', `
     <div class="mobile-content" style="padding:.75rem">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem">
-        <div style="background:linear-gradient(135deg,var(--primary),var(--accent));color:white;border-radius:12px;padding:1rem;text-align:center">
+        <div style="background:linear-gradient(135deg,#1a1a1a,#333333);color:white;border-radius:12px;padding:1rem;text-align:center">
           <div style="font-size:2rem;font-weight:700;margin-bottom:.25rem">${pending}</div>
           <div style="font-size:.75rem;opacity:.9">Pending Orders</div>
         </div>
@@ -1777,17 +1777,17 @@ function renderMobileCustDashboard() {
 
   set('mobile-customer-content', `
     <div class="mobile-content" style="padding:.75rem;display:flex;flex-direction:column;gap:.75rem;height:100%">
-      <div style="background:linear-gradient(135deg,var(--primary),var(--accent));color:white;border-radius:12px;padding:1rem;text-align:center">
+      <div style="background:linear-gradient(135deg,#1a1a1a,#333333);color:white;border-radius:12px;padding:1rem;text-align:center">
         <div style="font-size:.85rem;opacity:.9">Welcome back</div>
         <div style="font-size:1.1rem;font-weight:700">${currentUser.name}</div>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
-        <button class="btn" onclick="navigate('catalog')" style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:12px;padding:1rem;text-align:center;cursor:pointer">
+        <button class="btn" onclick="navigate('catalog')" style="background:linear-gradient(135deg,#1a1a1a,#404040);color:white;border:none;border-radius:12px;padding:1rem;text-align:center;cursor:pointer">
           <div style="font-size:1.5rem;margin-bottom:.25rem">🛍️</div>
           <div style="font-size:.75rem;font-weight:600">${Products.all().length} Products</div>
         </button>
-        <button class="btn" onclick="navigate('my-orders')" style="background:linear-gradient(135deg,#f093fb,#f5576c);color:white;border:none;border-radius:12px;padding:1rem;text-align:center;cursor:pointer">
+        <button class="btn" onclick="navigate('my-orders')" style="background:linear-gradient(135deg,#333333,#1a1a1a);color:white;border:none;border-radius:12px;padding:1rem;text-align:center;cursor:pointer">
           <div style="font-size:1.5rem;margin-bottom:.25rem">📋</div>
           <div style="font-size:.75rem;font-weight:600">${myOrders.length} Orders</div>
         </button>

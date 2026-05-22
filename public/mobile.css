@@ -525,7 +525,7 @@ input[type="checkbox"], input[type="radio"] {
   justify-content: center;
   min-height: 100vh;
   padding: 1rem;
-  background: linear-gradient(135deg, var(--primary), var(--accent));
+  background: linear-gradient(135deg, #000000, #333333);
 }
 
 .mobile-auth-card {
