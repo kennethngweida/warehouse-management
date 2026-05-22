@@ -1,3 +1,10 @@
+// ── Device Detection ─────────────────────────────────────────
+const isMobileDevice = () => {
+  const userAgent = navigator.userAgent.toLowerCase();
+  return /iphone|ipad|ipod|android|webos|blackberry|windows phone/.test(userAgent);
+};
+const IS_MOBILE = isMobileDevice();
+
 // ── State ─────────────────────────────────────────────────────
 let currentUser = null;
 let cart = [];
@@ -19,6 +26,14 @@ function route(view) {
     : 'landing');
   localStorage.setItem('wm_view', currentView);
 
+  if (IS_MOBILE) {
+    routeMobile();
+  } else {
+    routeDesktop();
+  }
+}
+
+function routeDesktop() {
   ['landing','login','register','admin','customer'].forEach(p => hide('page-' + p));
 
   if (!currentUser) {
@@ -51,6 +66,38 @@ function route(view) {
       'cust-profile':   renderCustProfile,
     };
     (views[currentView] || (() => { currentView = 'catalog'; renderCatalog(); }))();
+  }
+}
+
+function routeMobile() {
+  ['mobile-landing', 'mobile-login', 'mobile-admin', 'mobile-customer'].forEach(p => hide('page-' + p));
+
+  if (!currentUser) {
+    if (currentView === 'login') { show('page-mobile-login'); return; }
+    currentView = 'landing'; show('page-mobile-landing'); return;
+  }
+
+  if (currentUser.role === 'admin') {
+    show('page-mobile-admin');
+    const views = {
+      'admin-dashboard': renderMobileAdminDashboard,
+      'inventory':       renderMobileInventory,
+      'admin-orders':    renderMobileAdminOrders,
+      'stock-history':   renderMobileStockHistory,
+      'admin-users':     renderMobileAdminUsers,
+      'admin-profile':   renderMobileAdminProfile,
+    };
+    (views[currentView] || (() => { currentView = 'admin-dashboard'; renderMobileAdminDashboard(); }))();
+  } else {
+    show('page-mobile-customer');
+    const views = {
+      'cust-dashboard': renderMobileCustDashboard,
+      'catalog':        renderMobileCatalog,
+      'cart':           renderMobileCart,
+      'my-orders':      renderMobileMyOrders,
+      'cust-profile':   renderMobileCustProfile,
+    };
+    (views[currentView] || (() => { currentView = 'catalog'; renderMobileCatalog(); }))();
   }
 }
 
@@ -98,6 +145,19 @@ function handleLogin(e) {
   const pass  = el('login-pass').value;
   const res   = Users.login(username, pass);
   if (res.error) { set('login-error', `<div class="alert alert-error">⚠️ ${res.error}</div>`); return; }
+  currentUser = res.user;
+  Session.set(res.user);
+  currentView = res.user.role === 'admin' ? 'admin-dashboard' : 'catalog';
+  toast(`Welcome back, ${res.user.name}!`, 'success');
+  route();
+}
+
+function handleLoginMobile(e) {
+  e.preventDefault();
+  const username = el('mobile-login-username').value.trim();
+  const pass  = el('mobile-login-pass').value;
+  const res   = Users.login(username, pass);
+  if (res.error) { set('mobile-login-error', `<div class="alert alert-error">⚠️ ${res.error}</div>`); return; }
   currentUser = res.user;
   Session.set(res.user);
   currentView = res.user.role === 'admin' ? 'admin-dashboard' : 'catalog';
@@ -250,7 +310,7 @@ function renderAdminDashboard() {
                   <tr>
                     <td><div style="display:flex;align-items:center;gap:.5rem"><span>${p.emoji || categoryEmoji(p.category)}</span><span style="font-weight:600">${p.name}</span></div></td>
                     <td><strong style="color:${p.stock === 0 ? 'var(--danger)' : 'var(--warning)'}">${p.stock}</strong></td>
-                    <td style="color:var(--text-muted)">${p.minStock}</td>
+                    <td style="color:var(--text-muted)">${p.min_stock}</td>
                     <td>${stockBadge(p)}</td>
                   </tr>`).join('')}
                 </tbody></table></div>`}
@@ -283,9 +343,9 @@ function renderAdminDashboard() {
         </div>
         <div style="display:flex;flex-direction:column;gap:.9rem">
           ${products.slice(0,8).map(p => {
-            const max = Math.max(p.stock, p.minStock * 3, 1);
+            const max = Math.max(p.stock, p.min_stock * 3, 1);
             const pct = Math.min(100, Math.round(p.stock / max * 100));
-            const cls = p.stock === 0 ? 'low' : p.stock <= p.minStock ? 'warn' : '';
+            const cls = p.stock === 0 ? 'low' : p.stock <= p.min_stock ? 'warn' : '';
             return `<div>
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.35rem">
                 <span style="font-size:.85rem;font-weight:600;display:flex;align-items:center;gap:.4rem">
@@ -445,7 +505,7 @@ async function saveProduct(sku) {
     const data = {
       name, sku: newSku, category, price, stock,
       description: '',
-      minStock: 10,
+      min_stock: 10,
       unit: 'units',
       emoji: categoryEmoji(category)
     };
@@ -1434,5 +1494,468 @@ async function changePassword() {
     set('password-error', '<div class="alert alert-success">✅ Password changed successfully!</div>');
   } catch (err) {
     set('password-error', `<div class="alert alert-error">⚠️ ${err.message}</div>`);
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// MOBILE VIEWS
+// ════════════════════════════════════════════════════════
+
+function renderMobileAdminDashboard() {
+  el('mobile-admin-title').textContent = 'Dashboard';
+  const orders   = Orders.all();
+  const lowStock = Products.lowStock();
+  const pending  = orders.filter(o => o.status === 'pending').length;
+
+  set('mobile-admin-content', `
+    <div class="mobile-content" style="padding:.75rem">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem">
+        <div style="background:linear-gradient(135deg,var(--primary),var(--accent));color:white;border-radius:12px;padding:1rem;text-align:center">
+          <div style="font-size:2rem;font-weight:700;margin-bottom:.25rem">${pending}</div>
+          <div style="font-size:.75rem;opacity:.9">Pending Orders</div>
+        </div>
+        <div style="background:linear-gradient(135deg,var(--warning),#ff9800);color:white;border-radius:12px;padding:1rem;text-align:center">
+          <div style="font-size:2rem;font-weight:700;margin-bottom:.25rem">${lowStock.length}</div>
+          <div style="font-size:.75rem;opacity:.9">Low Stock</div>
+        </div>
+      </div>
+
+      ${lowStock.length > 0 ? `
+        <div style="background:white;border-radius:12px;border:1px solid var(--border-light);padding:.75rem;margin-bottom:.75rem">
+          <div style="font-weight:600;font-size:.9rem;margin-bottom:.5rem">⚠️ Low Stock</div>
+          ${lowStock.slice(0,1).map(p=>`
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div style="font-size:.85rem;font-weight:500">${p.name}</div>
+                <div style="font-size:.7rem;color:var(--text-muted)">${p.stock}/${p.min_stock} units</div>
+              </div>
+              <button class="btn btn-sm btn-outline" onclick="openAdjust('${p.sku}')" style="padding:.25rem .5rem;font-size:.7rem">+</button>
+            </div>`).join('')}
+        </div>
+      ` : ''}
+
+      ${pending > 0 ? `
+        <div style="background:white;border-radius:12px;border:1px solid var(--border-light);padding:.75rem">
+          <div style="font-weight:600;font-size:.9rem;margin-bottom:.5rem">🧾 Pending</div>
+          ${orders.filter(o=>o.status==='pending').slice(0,1).map(o=>`
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div style="font-size:.85rem;font-weight:500">#${o.id.replace('ORD-','')}</div>
+                <div style="font-size:.7rem;color:var(--text-muted)">${o.customerName}</div>
+              </div>
+              <span style="font-weight:700;color:var(--primary);font-size:.9rem">${fmt(o.total)}</span>
+            </div>`).join('')}
+        </div>
+      ` : ''}
+    </div>
+  `);
+}
+
+function renderMobileInventory() {
+  el('mobile-admin-title').textContent = 'Inventory';
+  const products = Products.all();
+
+  set('mobile-admin-content', `
+    <div class="mobile-content">
+      <button class="btn btn-primary w-full" onclick="openAddProduct()" style="margin-bottom:1rem">+ Add Product</button>
+
+      ${products.length === 0
+        ? '<div class="empty-state"><p>No products</p></div>'
+        : products.map(p => `
+          <div class="card" style="margin-bottom:.75rem">
+            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:.5rem">
+              <div>
+                <div style="font-weight:600;font-size:.95rem">${p.name}</div>
+                <div style="font-size:.75rem;color:var(--text-muted)">${p.sku}</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-weight:700;color:var(--primary)">${p.stock}</div>
+                <div style="font-size:.75rem;color:var(--text-muted)">units</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:.5rem">
+              <button class="btn btn-sm btn-outline" style="flex:1" onclick="openEditProduct('${p.sku}')">Edit</button>
+              <button class="btn btn-sm btn-outline" style="flex:1" onclick="openAdjust('${p.sku}')">Stock</button>
+            </div>
+          </div>`).join('')}
+    </div>
+  `);
+}
+
+function renderMobileAdminOrders() {
+  el('mobile-admin-title').textContent = 'Orders';
+  const orders = Orders.all();
+
+  set('mobile-admin-content', `
+    <div class="mobile-content">
+      ${orders.length === 0
+        ? '<div class="empty-state"><p>No orders</p></div>'
+        : orders.map(o => `
+          <div class="card" style="margin-bottom:.75rem">
+            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:.75rem">
+              <div>
+                <div style="font-weight:600">#${o.id.replace('ORD-','')}</div>
+                <div style="font-size:.8rem;color:var(--text-muted)">${o.customerName}</div>
+              </div>
+              ${statusBadge(o.status)}
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;padding:.5rem;background:var(--bg);border-radius:8px">
+              <div>
+                <div style="font-size:.75rem;color:var(--text-muted)">Total</div>
+                <div style="font-weight:700;font-size:1.1rem">${fmt(o.total)}</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:.75rem;color:var(--text-muted)">Items</div>
+                <div style="font-weight:700;font-size:1.1rem">${o.items.length}</div>
+              </div>
+            </div>
+            <select class="form-control" style="font-size:.85rem" onchange="updateOrderStatus('${o.id}',this.value)">
+              ${['pending','processing','shipped','delivered','cancelled'].map(s=>`<option value="${s}" ${o.status===s?'selected':''}>${s}</option>`).join('')}
+            </select>
+          </div>`).join('')}
+    </div>
+  `);
+}
+
+function renderMobileStockHistory() {
+  el('mobile-admin-title').textContent = 'History';
+  const movements = Movements.all().slice(0, 20);
+
+  set('mobile-admin-content', `
+    <div class="mobile-content">
+      ${movements.length === 0
+        ? '<div class="empty-state"><p>No history</p></div>'
+        : movements.map(m => `
+          <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:.75rem;margin-bottom:.5rem">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;font-size:.95rem;margin-bottom:.25rem">${m.product_name}</div>
+              <div style="font-size:.75rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.reason}</div>
+            </div>
+            <div style="margin-left:.75rem;text-align:right;font-weight:700;color:${m.type==='in'?'var(--success)':'var(--danger)'}">
+              ${m.type==='in'?'+':'-'}${m.qty}
+            </div>
+          </div>`).join('')}
+    </div>
+  `);
+}
+
+function renderMobileAdminUsers() {
+  el('mobile-admin-title').textContent = 'Users';
+  const users = Users.all();
+
+  set('mobile-admin-content', `
+    <div class="mobile-content">
+      <button class="btn btn-primary w-full" onclick="openAddUser()" style="margin-bottom:1rem">+ Add User</button>
+
+      ${users.map(u => `
+        <div class="card" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+          <div style="flex:1">
+            <div style="font-weight:600;margin-bottom:.25rem">${u.name}</div>
+            <div style="font-size:.75rem;color:var(--text-muted)">${u.email}</div>
+          </div>
+          <button class="btn btn-sm btn-outline" onclick="openEditUser('${u.id}')">Edit</button>
+        </div>`).join('')}
+    </div>
+  `);
+}
+
+function renderMobileAdminProfile() {
+  el('mobile-admin-title').textContent = 'Settings';
+  set('mobile-admin-content', `
+    <div class="mobile-content">
+      <div class="card">
+        <div class="card-title">👤 Profile</div>
+        <div style="margin-bottom:1rem">
+          <label style="display:block;font-size:.8rem;color:var(--text-muted);margin-bottom:.25rem">Name</label>
+          <input class="form-control" id="admin-prof-name" value="${currentUser.name}">
+        </div>
+        <div style="margin-bottom:1rem">
+          <label style="display:block;font-size:.8rem;color:var(--text-muted);margin-bottom:.25rem">Email</label>
+          <input class="form-control" id="admin-prof-email" value="${currentUser.email}" type="email">
+        </div>
+        <button class="btn btn-primary w-full" onclick="updateAdminMobileProfile()">Save Changes</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🔐 Change Password</div>
+        <div style="margin-bottom:1rem">
+          <label style="display:block;font-size:.8rem;color:var(--text-muted);margin-bottom:.25rem">Current</label>
+          <input class="form-control" id="admin-prof-pass-current" type="password">
+        </div>
+        <div style="margin-bottom:1rem">
+          <label style="display:block;font-size:.8rem;color:var(--text-muted);margin-bottom:.25rem">New</label>
+          <input class="form-control" id="admin-prof-pass-new" type="password">
+        </div>
+        <div style="margin-bottom:1rem">
+          <label style="display:block;font-size:.8rem;color:var(--text-muted);margin-bottom:.25rem">Confirm</label>
+          <input class="form-control" id="admin-prof-pass-confirm" type="password">
+        </div>
+        <button class="btn btn-primary w-full" onclick="changeAdminMobilePassword()">Update Password</button>
+      </div>
+
+      <button class="btn btn-ghost w-full" onclick="logout()" style="margin-top:1rem">Sign Out</button>
+    </div>
+  `);
+}
+
+async function updateAdminMobileProfile() {
+  const name = el('admin-prof-name').value.trim();
+  const email = el('admin-prof-email').value.trim();
+  if (!name || !email) { toast('Please fill in all fields', 'warning'); return; }
+  try {
+    await Users.update(currentUser.id, { name, email, role: currentUser.role, password: currentUser.password });
+    currentUser = { ...currentUser, name, email };
+    Session.set(currentUser);
+    toast('Profile updated!', 'success');
+    renderMobileAdminProfile();
+  } catch (err) {
+    toast(`Error: ${err.message}`, 'error');
+  }
+}
+
+async function changeAdminMobilePassword() {
+  const current = el('admin-prof-pass-current').value;
+  const newPass = el('admin-prof-pass-new').value;
+  const confirm = el('admin-prof-pass-confirm').value;
+  if (!current || !newPass || !confirm) { toast('Fill in all fields', 'warning'); return; }
+  if (current !== currentUser.password) { toast('Current password incorrect', 'error'); return; }
+  if (newPass !== confirm) { toast('Passwords do not match', 'error'); return; }
+  if (newPass.length < 6) { toast('Password must be 6+ chars', 'warning'); return; }
+  try {
+    await Users.update(currentUser.id, { name: currentUser.name, email: currentUser.email, role: currentUser.role, password: newPass });
+    currentUser = { ...currentUser, password: newPass };
+    Session.set(currentUser);
+    toast('Password updated!', 'success');
+    el('admin-prof-pass-current').value = '';
+    el('admin-prof-pass-new').value = '';
+    el('admin-prof-pass-confirm').value = '';
+  } catch (err) {
+    toast(`Error: ${err.message}`, 'error');
+  }
+}
+
+function renderMobileCustDashboard() {
+  el('mobile-cust-title').textContent = 'Home';
+  const myOrders = Orders.byCustomer(currentUser.id);
+
+  set('mobile-customer-content', `
+    <div class="mobile-content" style="padding:.75rem;display:flex;flex-direction:column;gap:.75rem;height:100%">
+      <div style="background:linear-gradient(135deg,var(--primary),var(--accent));color:white;border-radius:12px;padding:1rem;text-align:center">
+        <div style="font-size:.85rem;opacity:.9">Welcome back</div>
+        <div style="font-size:1.1rem;font-weight:700">${currentUser.name}</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+        <button class="btn" onclick="navigate('catalog')" style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:12px;padding:1rem;text-align:center;cursor:pointer">
+          <div style="font-size:1.5rem;margin-bottom:.25rem">🛍️</div>
+          <div style="font-size:.75rem;font-weight:600">${Products.all().length} Products</div>
+        </button>
+        <button class="btn" onclick="navigate('my-orders')" style="background:linear-gradient(135deg,#f093fb,#f5576c);color:white;border:none;border-radius:12px;padding:1rem;text-align:center;cursor:pointer">
+          <div style="font-size:1.5rem;margin-bottom:.25rem">📋</div>
+          <div style="font-size:.75rem;font-weight:600">${myOrders.length} Orders</div>
+        </button>
+      </div>
+
+      <button class="btn btn-primary w-full" onclick="navigate('catalog')" style="margin-top:auto">Continue Shopping</button>
+    </div>
+  `);
+}
+
+function renderMobileCatalog() {
+  el('mobile-cust-title').textContent = 'Shop';
+  const products = Products.all();
+
+  set('mobile-customer-content', `
+    <div class="mobile-content">
+      ${products.length === 0
+        ? '<div class="empty-state"><p>No products available</p></div>'
+        : products.map(p => `
+          <div class="card" style="display:flex;gap:1rem;margin-bottom:.75rem">
+            <div style="font-size:2rem;flex-shrink:0">${categoryEmoji(p.category)}</div>
+            <div style="flex:1;display:flex;flex-direction:column;justify-content:space-between">
+              <div>
+                <div style="font-weight:600;margin-bottom:.25rem">${p.name}</div>
+                <div style="font-size:.75rem;color:var(--text-muted)">${p.stock > 0 ? p.stock + ' in stock' : 'Out of stock'}</div>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div style="font-weight:700;color:var(--primary);font-size:1.1rem">${fmt(p.price)}</div>
+                <button class="btn btn-sm btn-primary" onclick="addToCartMobile('${p.sku}')" ${p.stock===0?'disabled':''}>+</button>
+              </div>
+            </div>
+          </div>`).join('')}
+    </div>
+  `);
+}
+
+function renderMobileCart() {
+  el('mobile-cust-title').textContent = 'Cart';
+
+  if (cart.length === 0) {
+    set('mobile-customer-content', `
+      <div class="mobile-content">
+        <div class="empty-state" style="padding:2rem 1rem">
+          <div class="empty-icon">🛒</div>
+          <p>Cart is empty</p>
+          <button class="btn btn-primary" onclick="navigate('catalog')" style="margin-top:1rem">Shop Now</button>
+        </div>
+      </div>
+    `);
+    return;
+  }
+
+  const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  set('mobile-customer-content', `
+    <div class="mobile-content">
+      ${cart.map(item => `
+        <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:.75rem;margin-bottom:.5rem">
+          <div style="flex:1">
+            <div style="font-weight:600;margin-bottom:.25rem">${item.name}</div>
+            <div style="font-size:.8rem;color:var(--text-muted)">${fmt(item.price)} × ${item.qty}</div>
+          </div>
+          <div style="text-align:right;margin-right:.75rem">
+            <div style="font-weight:700">${fmt(item.price * item.qty)}</div>
+          </div>
+          <button class="btn btn-sm btn-ghost" onclick="removeFromCart('${item.sku}')" style="padding:.25rem">×</button>
+        </div>`).join('')}
+
+      <div class="card" style="margin-top:1rem;padding:1rem;background:var(--bg);border-radius:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;font-size:1.1rem">
+          <span style="font-weight:600">Total:</span>
+          <span style="font-weight:700;color:var(--primary)">${fmt(total)}</span>
+        </div>
+        <button class="btn btn-primary w-full btn-lg" onclick="checkoutMobile()">Place Order</button>
+      </div>
+    </div>
+  `);
+}
+
+function renderMobileMyOrders() {
+  el('mobile-cust-title').textContent = 'Orders';
+  const orders = Orders.byCustomer(currentUser.id);
+
+  set('mobile-customer-content', `
+    <div class="mobile-content">
+      ${orders.length === 0
+        ? '<div class="empty-state"><p>No orders yet</p></div>'
+        : orders.map(o => `
+          <div class="card" style="margin-bottom:.75rem">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+              <div style="font-weight:600">#${o.id.replace('ORD-','')}</div>
+              ${statusBadge(o.status)}
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:.8rem;color:var(--text-muted);margin-bottom:.5rem">
+              <span>${fmtDate(o.createdAt)}</span>
+              <span>${o.items.length} item${o.items.length!==1?'s':''}</span>
+            </div>
+            <div style="font-weight:700;color:var(--primary);font-size:1.1rem">${fmt(o.total)}</div>
+          </div>`).join('')}
+    </div>
+  `);
+}
+
+function renderMobileCustProfile() {
+  el('mobile-cust-title').textContent = 'Settings';
+  set('mobile-customer-content', `
+    <div class="mobile-content">
+      <div class="card">
+        <div class="card-title">👤 Profile</div>
+        <div style="margin-bottom:1rem">
+          <label style="display:block;font-size:.8rem;color:var(--text-muted);margin-bottom:.25rem">Name</label>
+          <input class="form-control" id="prof-name" value="${currentUser.name}">
+        </div>
+        <div style="margin-bottom:1rem">
+          <label style="display:block;font-size:.8rem;color:var(--text-muted);margin-bottom:.25rem">Email</label>
+          <input class="form-control" id="prof-email" value="${currentUser.email}" type="email">
+        </div>
+        <button class="btn btn-primary w-full" onclick="updateMobileProfile()">Save Changes</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🔐 Change Password</div>
+        <div style="margin-bottom:1rem">
+          <label style="display:block;font-size:.8rem;color:var(--text-muted);margin-bottom:.25rem">Current</label>
+          <input class="form-control" id="prof-pass-current" type="password">
+        </div>
+        <div style="margin-bottom:1rem">
+          <label style="display:block;font-size:.8rem;color:var(--text-muted);margin-bottom:.25rem">New</label>
+          <input class="form-control" id="prof-pass-new" type="password">
+        </div>
+        <div style="margin-bottom:1rem">
+          <label style="display:block;font-size:.8rem;color:var(--text-muted);margin-bottom:.25rem">Confirm</label>
+          <input class="form-control" id="prof-pass-confirm" type="password">
+        </div>
+        <button class="btn btn-primary w-full" onclick="changeMobilePassword()">Update Password</button>
+      </div>
+
+      <button class="btn btn-ghost w-full" onclick="logout()" style="margin-top:1rem">Sign Out</button>
+    </div>
+  `);
+}
+
+function addToCartMobile(sku) {
+  const p = Products.find(sku); if (!p) return;
+  const existing = cart.find(i => i.sku === sku);
+  if (existing) {
+    if (existing.qty < p.stock) existing.qty++;
+    else { toast('Cannot exceed available stock', 'warning'); return; }
+  } else {
+    if (p.stock > 0) cart.push({ ...p, qty: 1 });
+    else { toast('Out of stock', 'error'); return; }
+  }
+  toast(`Added ${p.name} to cart`, 'success');
+  renderMobileCatalog();
+}
+
+function removeFromCart(sku) {
+  cart = cart.filter(i => i.sku !== sku);
+  renderMobileCart();
+}
+
+async function checkoutMobile() {
+  if (cart.length === 0) { toast('Cart is empty', 'warning'); return; }
+  const items = cart.map(i => ({ sku: i.sku, name: i.name, qty: i.qty, price: i.price }));
+  try {
+    await Orders.create(currentUser.id, currentUser.name, items);
+    cart = [];
+    toast('Order placed successfully!', 'success');
+    navigate('my-orders');
+  } catch (err) {
+    toast(`Error: ${err.message}`, 'error');
+  }
+}
+
+async function updateMobileProfile() {
+  const name = el('prof-name').value.trim();
+  const email = el('prof-email').value.trim();
+  if (!name || !email) { toast('Please fill in all fields', 'warning'); return; }
+  try {
+    await Users.update(currentUser.id, { name, email, role: currentUser.role, password: currentUser.password });
+    currentUser = { ...currentUser, name, email };
+    Session.set(currentUser);
+    toast('Profile updated!', 'success');
+    renderMobileCustProfile();
+  } catch (err) {
+    toast(`Error: ${err.message}`, 'error');
+  }
+}
+
+async function changeMobilePassword() {
+  const current = el('prof-pass-current').value;
+  const newPass = el('prof-pass-new').value;
+  const confirm = el('prof-pass-confirm').value;
+  if (!current || !newPass || !confirm) { toast('Fill in all fields', 'warning'); return; }
+  if (current !== currentUser.password) { toast('Current password incorrect', 'error'); return; }
+  if (newPass !== confirm) { toast('Passwords do not match', 'error'); return; }
+  if (newPass.length < 6) { toast('Password must be 6+ chars', 'warning'); return; }
+  try {
+    await Users.update(currentUser.id, { name: currentUser.name, email: currentUser.email, role: currentUser.role, password: newPass });
+    currentUser = { ...currentUser, password: newPass };
+    Session.set(currentUser);
+    toast('Password updated!', 'success');
+    el('prof-pass-current').value = '';
+    el('prof-pass-new').value = '';
+    el('prof-pass-confirm').value = '';
+  } catch (err) {
+    toast(`Error: ${err.message}`, 'error');
   }
 }

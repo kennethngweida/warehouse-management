@@ -5,11 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Warehouse Management — Inventory & Ordering Platform</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="mobile.css">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏭</text></svg>">
 </head>
 <body>
 
 <div id="toast-container"></div>
+
+<!-- ══════════════════════════════════════════════════════
+     MOBILE LANDING PAGE
+═══════════════════════════════════════════════════════ -->
+<div id="page-mobile-landing" class="hidden" style="display:flex;flex-direction:column;min-height:100vh;background:linear-gradient(135deg,var(--primary),var(--accent))">
+  <nav class="mobile-nav" style="background:transparent;border:none">
+    <div class="mobile-nav-title">WarehousePro</div>
+  </nav>
+  <section style="flex:1;display:flex;align-items:center;justify-content:center;padding:1rem">
+    <div style="text-align:center;color:white">
+      <div style="font-size:3rem;margin-bottom:1rem">🏭</div>
+      <h1 style="font-size:2rem;margin-bottom:2rem;font-weight:700">Warehouse Pro</h1>
+      <button class="btn btn-white btn-lg w-full" onclick="currentView='login';route()">Sign In</button>
+    </div>
+  </section>
+</div>
 
 <!-- ══════════════════════════════════════════════════════
      LANDING PAGE
@@ -35,6 +52,29 @@
       <button class="btn btn-white btn-lg" onclick="currentView='login';route()">Sign In</button>
     </div>
   </section>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     MOBILE LOGIN PAGE
+═══════════════════════════════════════════════════════ -->
+<div id="page-mobile-login" class="hidden mobile-auth-container">
+  <div class="mobile-auth-card">
+    <div class="mobile-auth-logo">🏭</div>
+    <div class="mobile-auth-title">Welcome back</div>
+    <div class="mobile-auth-sub">Sign in to your account</div>
+    <div id="mobile-login-error"></div>
+    <form onsubmit="handleLoginMobile(event)">
+      <div class="form-group">
+        <label>Username</label>
+        <input class="form-control" id="mobile-login-username" type="text" placeholder="your username" required autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input class="form-control" id="mobile-login-pass" type="password" placeholder="Your password" required autocomplete="current-password">
+      </div>
+      <button class="btn btn-primary w-full btn-lg" type="submit">Sign In</button>
+    </form>
+  </div>
 </div>
 
 <!-- ══════════════════════════════════════════════════════
@@ -143,6 +183,37 @@
 </div>
 
 <!-- ══════════════════════════════════════════════════════
+     MOBILE ADMIN APP
+═══════════════════════════════════════════════════════ -->
+<div id="page-mobile-admin" class="hidden" style="display:flex;flex-direction:column;min-height:100vh">
+  <nav class="mobile-nav">
+    <div style="flex:1">
+      <div class="mobile-nav-title" id="mobile-admin-title">Dashboard</div>
+    </div>
+    <button class="btn btn-ghost" onclick="logout()" style="padding:0.5rem;font-size:1.2rem">🚪</button>
+  </nav>
+  <main id="mobile-admin-content" style="flex:1;overflow-y:auto;padding-bottom:1rem"></main>
+  <nav class="mobile-bottom-nav">
+    <button class="mobile-nav-item" onclick="navigate('admin-dashboard')">
+      <span>📊</span>
+      <span>Dashboard</span>
+    </button>
+    <button class="mobile-nav-item" onclick="navigate('inventory')">
+      <span>📦</span>
+      <span>Inventory</span>
+    </button>
+    <button class="mobile-nav-item" onclick="navigate('admin-orders')">
+      <span>🧾</span>
+      <span>Orders</span>
+    </button>
+    <button class="mobile-nav-item" onclick="navigate('admin-users')">
+      <span>👥</span>
+      <span>Users</span>
+    </button>
+  </nav>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
      ADMIN APP
 ═══════════════════════════════════════════════════════ -->
 <div id="page-admin" class="hidden">
@@ -165,6 +236,37 @@
     <aside class="sidebar" id="admin-sidebar"></aside>
     <main class="main-content" id="admin-content"></main>
   </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     MOBILE CUSTOMER APP
+═══════════════════════════════════════════════════════ -->
+<div id="page-mobile-customer" class="hidden" style="display:flex;flex-direction:column;min-height:100vh">
+  <nav class="mobile-nav">
+    <div style="flex:1">
+      <div class="mobile-nav-title" id="mobile-cust-title">Catalog</div>
+    </div>
+    <button class="btn btn-ghost" onclick="logout()" style="padding:0.5rem;font-size:1.2rem">🚪</button>
+  </nav>
+  <main id="mobile-customer-content" style="flex:1;overflow-y:auto;padding-bottom:1rem"></main>
+  <nav class="mobile-bottom-nav">
+    <button class="mobile-nav-item" onclick="navigate('cust-dashboard')">
+      <span>🏠</span>
+      <span>Home</span>
+    </button>
+    <button class="mobile-nav-item" onclick="navigate('catalog')">
+      <span>🛍️</span>
+      <span>Shop</span>
+    </button>
+    <button class="mobile-nav-item" onclick="navigate('cart')">
+      <span>🛒</span>
+      <span>Cart</span>
+    </button>
+    <button class="mobile-nav-item" onclick="navigate('my-orders')">
+      <span>📋</span>
+      <span>Orders</span>
+    </button>
+  </nav>
 </div>
 
 <!-- ══════════════════════════════════════════════════════
