@@ -15,6 +15,36 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* ── Mobile Header (Auto-Hide on Scroll) ──────────────────── */
+
+.mobile-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 48px;
+  background: white;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  z-index: 90;
+  transform: translateY(0);
+  transition: transform 0.3s ease-out;
+  padding-top: env(safe-area-inset-top);
+}
+
+.mobile-header.hide {
+  transform: translateY(-100%);
+}
+
+#mobile-admin-content,
+#mobile-customer-content {
+  padding-top: 48px;
+  padding-top: calc(48px + env(safe-area-inset-top));
+}
+
 /* ── Mobile Navigation ───────────────────────────────────── */
 
 .mobile-nav {

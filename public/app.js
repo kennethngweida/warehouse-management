@@ -5,6 +5,44 @@ const isMobileDevice = () => {
 };
 const IS_MOBILE = isMobileDevice();
 
+// ── Mobile Header Auto-Hide on Scroll ───────────────────────
+let lastScrollPos = 0;
+let headerHidden = false;
+
+function initMobileHeaderScroll(headerId) {
+  const header = el(headerId);
+  if (!header) return;
+
+  const contentId = headerId.includes('admin') ? 'mobile-admin-content' : 'mobile-customer-content';
+  const content = el(contentId);
+  if (!content) return;
+
+  lastScrollPos = 0;
+  headerHidden = false;
+  header.classList.remove('hide');
+
+  // Remove any existing scroll listener (to avoid duplicates)
+  content.onscroll = null;
+
+  content.addEventListener('scroll', () => {
+    const currentScroll = content.scrollTop;
+
+    if (currentScroll > lastScrollPos && currentScroll > 50) {
+      if (!headerHidden) {
+        header.classList.add('hide');
+        headerHidden = true;
+      }
+    } else {
+      if (headerHidden) {
+        header.classList.remove('hide');
+        headerHidden = false;
+      }
+    }
+
+    lastScrollPos = currentScroll;
+  });
+}
+
 // ── State ─────────────────────────────────────────────────────
 let currentUser = null;
 let cart = [];
@@ -79,6 +117,7 @@ function routeMobile() {
 
   if (currentUser.role === 'admin') {
     show('page-mobile-admin');
+    initMobileHeaderScroll('mobile-admin-header');
     const views = {
       'admin-dashboard': renderMobileAdminDashboard,
       'inventory':       renderMobileInventory,
@@ -90,6 +129,7 @@ function routeMobile() {
     (views[currentView] || (() => { currentView = 'admin-dashboard'; renderMobileAdminDashboard(); }))();
   } else {
     show('page-mobile-customer');
+    initMobileHeaderScroll('mobile-cust-header');
     const views = {
       'cust-dashboard': renderMobileCustDashboard,
       'catalog':        renderMobileCatalog,
