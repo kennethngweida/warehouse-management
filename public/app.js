@@ -172,6 +172,107 @@ function showModal(html) {
 }
 function closeModal() { const m = el('modal-overlay'); if (m) m.remove(); }
 
+// ── Barcode Scanner ───────────────────────────────────────────
+let scanner = null;
+
+function openBarcodeScanner(mode = 'search') {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    toast('Camera not supported on this device', 'error');
+    return;
+  }
+
+  showModal(`
+    <div class="modal-header"><div class="modal-title">Scan Barcode</div><button class="modal-close" onclick="closeBarcodeScanner()">×</button></div>
+    <div class="modal-body">
+      <div id="qr-reader" style="width:100%;height:300px;border:2px solid var(--border);border-radius:8px;overflow:hidden"></div>
+      <div id="scan-result" style="margin-top:1rem;text-align:center;font-size:.9rem;color:var(--text-muted)">Scanning...</div>
+    </div>
+  `);
+
+  setTimeout(() => {
+    try {
+      scanner = new Html5Qrcode('qr-reader');
+      scanner.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => {
+          handleBarcodeScanned(decodedText, mode);
+        },
+        (errorMessage) => { }
+      );
+    } catch (err) {
+      set('scan-result', '❌ Camera error. Please allow camera access.');
+    }
+  }, 100);
+}
+
+function closeBarcodeScanner() {
+  if (scanner) {
+    scanner.stop().catch(() => {});
+    scanner = null;
+  }
+  closeModal();
+}
+
+function handleBarcodeScanned(barcode, mode) {
+  closeBarcodeScanner();
+
+  if (mode === 'search') {
+    const product = Products.find(barcode);
+    if (product) {
+      toast(`Found: ${product.name}`, 'success');
+      openEditProduct(barcode);
+    } else {
+      const confirmed = confirm(`Product not found. Create new product with SKU: ${barcode}?`);
+      if (confirmed) {
+        openAddProductWithSku(barcode);
+      }
+    }
+  } else if (mode === 'create') {
+    openAddProductWithSku(barcode);
+  }
+}
+
+function openAddProductWithSku(sku) {
+  showModal(`
+    <div class="modal-header"><div class="modal-title">Add New Product</div><button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="modal-body"><div id="prod-error"></div>
+      <div class="form-group">
+        <label>Product Name *</label>
+        <input class="form-control" id="pf-name" value="" placeholder="e.g. Safety Gloves">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+        <div class="form-group">
+          <label>SKU *</label>
+          <input class="form-control" id="pf-sku" value="${sku}" placeholder="e.g. GLV-001" readonly style="background:var(--bg);cursor:not-allowed">
+        </div>
+        <div class="form-group">
+          <label>Category *</label>
+          <select class="form-control" id="pf-cat">
+            <option value="">Select category</option>
+            <option value="Beverages">Beverages</option>
+            <option value="Beers">Beers</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+        <div class="form-group">
+          <label>Cost Price ($) *</label>
+          <input class="form-control" id="pf-price" type="number" step="0.01" min="0" value="" placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label>Stock Qty *</label>
+          <input class="form-control" id="pf-stock" type="number" min="0" value="" placeholder="0">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveProduct(null)">Add Product</button>
+    </div>
+  `);
+}
+
 // ── Auth ──────────────────────────────────────────────────────
 function logout() {
   Session.clear(); currentUser = null; cart = []; currentView = 'landing';
@@ -1595,7 +1696,10 @@ function renderMobileInventory() {
 
   set('mobile-admin-content', `
     <div class="mobile-content">
-      <button class="btn btn-primary w-full" onclick="openAddProduct()" style="margin-bottom:1rem">+ Add Product</button>
+      <div style="display:flex;gap:.5rem;margin-bottom:1rem">
+        <button class="btn btn-primary" style="flex:1" onclick="openAddProduct()">+ Add</button>
+        <button class="btn btn-outline" style="flex:1" onclick="openBarcodeScanner('create')">📸 Scan</button>
+      </div>
 
       ${products.length === 0
         ? '<div class="empty-state"><p>No products</p></div>'
@@ -1807,6 +1911,8 @@ function renderMobileCatalog() {
 
   set('mobile-customer-content', `
     <div class="mobile-content">
+      <button class="btn btn-outline w-full" onclick="openBarcodeScanner('search')" style="margin-bottom:1rem">📸 Scan Barcode</button>
+
       ${products.length === 0
         ? '<div class="empty-state"><p>No products available</p></div>'
         : products.map(p => `
