@@ -175,40 +175,76 @@ function closeModal() { const m = el('modal-overlay'); if (m) m.remove(); }
 // ── Barcode Scanner ───────────────────────────────────────────
 let scanner = null;
 
-function openBarcodeScanner(mode = 'search') {
+async function openBarcodeScanner(mode = 'search') {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     toast('Camera not supported on this device', 'error');
+    return;
+  }
+
+  // Request camera permission first
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment' }
+    });
+    // Close the stream immediately - we just needed to request permission
+    stream.getTracks().forEach(track => track.stop());
+  } catch (err) {
+    if (err.name === 'NotAllowedError') {
+      toast('❌ Camera permission denied. Please allow camera access in your device settings.', 'error');
+    } else if (err.name === 'NotFoundError') {
+      toast('❌ No camera found on this device', 'error');
+    } else {
+      toast('❌ Unable to access camera: ' + err.message, 'error');
+    }
     return;
   }
 
   showModal(`
     <div class="modal-header"><div class="modal-title">Scan Barcode</div><button class="modal-close" onclick="closeBarcodeScanner()">×</button></div>
     <div class="modal-body">
-      <div id="qr-reader" style="width:100%;height:300px;border:2px solid var(--border);border-radius:8px;overflow:hidden"></div>
-      <div id="scan-result" style="margin-top:1rem;text-align:center;font-size:.9rem;color:var(--text-muted)">Scanning...</div>
+      <div id="qr-reader" style="width:100%;height:300px;border:2px solid var(--border);border-radius:8px;overflow:hidden;background:#000"></div>
+      <div id="scan-result" style="margin-top:1rem;text-align:center;font-size:.9rem;color:var(--text-muted)">📸 Point camera at barcode...</div>
     </div>
   `);
 
   setTimeout(() => {
     try {
+      if (typeof Html5Qrcode === 'undefined') {
+        set('scan-result', '❌ Scanner library not loaded. Please refresh the page.');
+        return;
+      }
+
       scanner = new Html5Qrcode('qr-reader');
       scanner.start(
         { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+          aspectRatio: 1.0
+        },
         (decodedText) => {
           handleBarcodeScanned(decodedText, mode);
         },
-        (errorMessage) => { }
-      );
+        (errorMessage) => {
+          // Silent error handling for continuous scanning
+        }
+      ).catch(err => {
+        set('scan-result', '❌ Scanner error: ' + err.message);
+      });
     } catch (err) {
-      set('scan-result', '❌ Camera error. Please allow camera access.');
+      set('scan-result', '❌ Error: ' + err.message);
+      console.error('Scanner error:', err);
     }
   }, 100);
 }
 
 function closeBarcodeScanner() {
   if (scanner) {
-    scanner.stop().catch(() => {});
+    try {
+      scanner.stop();
+    } catch (err) {
+      console.error('Error stopping scanner:', err);
+    }
     scanner = null;
   }
   closeModal();
@@ -217,20 +253,57 @@ function closeBarcodeScanner() {
 function handleBarcodeScanned(barcode, mode) {
   closeBarcodeScanner();
 
+  // Clean up barcode (remove whitespace)
+  barcode = barcode.trim();
+
   if (mode === 'search') {
     const product = Products.find(barcode);
     if (product) {
       toast(`Found: ${product.name}`, 'success');
       openEditProduct(barcode);
     } else {
-      const confirmed = confirm(`Product not found. Create new product with SKU: ${barcode}?`);
-      if (confirmed) {
-        openAddProductWithSku(barcode);
-      }
+      showModal(`
+        <div class="modal-header"><div class="modal-title">Product Not Found</div><button class="modal-close" onclick="closeModal()">×</button></div>
+        <div class="modal-body">
+          <p>No product found with SKU: <strong>${barcode}</strong></p>
+          <p style="margin-top:.75rem;color:var(--text-muted);font-size:.9rem">Would you like to create a new product with this SKU?</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-primary" onclick="closeModal();openAddProductWithSku('${barcode}')">Create Product</button>
+        </div>
+      `);
     }
   } else if (mode === 'create') {
     openAddProductWithSku(barcode);
   }
+}
+
+function openManualBarcodeEntry(mode = 'search') {
+  showModal(`
+    <div class="modal-header"><div class="modal-title">Enter Barcode</div><button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Barcode / SKU</label>
+        <input class="form-control" id="manual-barcode" type="text" placeholder="Enter barcode or SKU" autofocus>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="handleManualBarcode('${mode}')">Search</button>
+    </div>
+  `);
+  setTimeout(() => el('manual-barcode').focus(), 100);
+}
+
+function handleManualBarcode(mode) {
+  const barcode = el('manual-barcode').value.trim();
+  if (!barcode) {
+    toast('Please enter a barcode', 'warning');
+    return;
+  }
+  closeModal();
+  handleBarcodeScanned(barcode, mode);
 }
 
 function openAddProductWithSku(sku) {
@@ -1696,9 +1769,10 @@ function renderMobileInventory() {
 
   set('mobile-admin-content', `
     <div class="mobile-content">
-      <div style="display:flex;gap:.5rem;margin-bottom:1rem">
+      <div style="display:flex;gap:.25rem;margin-bottom:1rem">
         <button class="btn btn-primary" style="flex:1" onclick="openAddProduct()">+ Add</button>
         <button class="btn btn-outline" style="flex:1" onclick="openBarcodeScanner('create')">📸 Scan</button>
+        <button class="btn btn-outline" style="flex:0.5;padding:0" onclick="openManualBarcodeEntry('create')" title="Manual entry">✎</button>
       </div>
 
       ${products.length === 0
@@ -1911,7 +1985,10 @@ function renderMobileCatalog() {
 
   set('mobile-customer-content', `
     <div class="mobile-content">
-      <button class="btn btn-outline w-full" onclick="openBarcodeScanner('search')" style="margin-bottom:1rem">📸 Scan Barcode</button>
+      <div style="display:flex;gap:.25rem;margin-bottom:1rem">
+        <button class="btn btn-outline" style="flex:1" onclick="openBarcodeScanner('search')">📸 Scan</button>
+        <button class="btn btn-outline" style="flex:0.5;padding:0" onclick="openManualBarcodeEntry('search')" title="Manual entry">✎</button>
+      </div>
 
       ${products.length === 0
         ? '<div class="empty-state"><p>No products available</p></div>'
