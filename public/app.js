@@ -1614,6 +1614,7 @@ function renderMobileInventory() {
             <div style="display:flex;gap:.5rem">
               <button class="btn btn-sm btn-outline" style="flex:1" onclick="openEditProduct('${p.sku}')">Edit</button>
               <button class="btn btn-sm btn-outline" style="flex:1" onclick="openAdjust('${p.sku}')">Stock</button>
+              <button class="btn btn-sm btn-danger" style="flex:1;padding:0" onclick="deleteProduct('${p.sku}')">🗑</button>
             </div>
           </div>`).join('')}
     </div>
@@ -1647,9 +1648,12 @@ function renderMobileAdminOrders() {
                 <div style="font-weight:700;font-size:1.1rem">${o.items.length}</div>
               </div>
             </div>
-            <select class="form-control" style="font-size:.85rem" onchange="updateOrderStatus('${o.id}',this.value)">
-              ${['pending','processing','shipped','delivered','cancelled'].map(s=>`<option value="${s}" ${o.status===s?'selected':''}>${s}</option>`).join('')}
-            </select>
+            <div style="display:flex;gap:.5rem">
+              <button class="btn btn-sm btn-outline" style="flex:1" onclick="viewMobileOrderDetails('${o.id}')">View</button>
+              <select class="form-control" style="font-size:.85rem;flex:1" onchange="updateOrderStatus('${o.id}',this.value)">
+                ${['pending','processing','shipped','delivered','cancelled'].map(s=>`<option value="${s}" ${o.status===s?'selected':''}>${s}</option>`).join('')}
+              </select>
+            </div>
           </div>`).join('')}
     </div>
   `);
@@ -1991,4 +1995,65 @@ async function changeMobilePassword() {
   } catch (err) {
     toast(`Error: ${err.message}`, 'error');
   }
+}
+
+function viewMobileOrderDetails(orderId) {
+  const order = Orders.find(orderId);
+  if (!order) return;
+
+  const contentId = currentUser.role === 'admin' ? 'mobile-admin-content' : 'mobile-customer-content';
+  set(contentId, `
+    <div class="mobile-content">
+      <div style="margin-bottom:1rem">
+        <button class="btn btn-ghost" onclick="navigate('${currentUser.role === 'admin' ? 'admin-orders' : 'my-orders'}')" style="padding:.5rem;font-size:.9rem">← Back</button>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+          <div>
+            <div style="font-weight:600;font-size:1rem">Order #${order.id.replace('ORD-','')}</div>
+            <div style="font-size:.8rem;color:var(--text-muted)">${fmtDate(order.createdAt)}</div>
+          </div>
+          ${statusBadge(order.status)}
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="font-weight:600;margin-bottom:.75rem">📋 Items</div>
+        ${order.items.map(item => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem;border-bottom:1px solid var(--border-light)">
+            <div>
+              <div style="font-weight:500;font-size:.95rem">${item.name}</div>
+              <div style="font-size:.8rem;color:var(--text-muted)">${item.sku}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-weight:600">${item.qty}x</div>
+              <div style="font-size:.8rem;color:var(--text-muted)">${fmt(item.price)}</div>
+            </div>
+          </div>`).join('')}
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.75rem;background:var(--bg);border-radius:8px">
+          <span style="font-weight:600">Total:</span>
+          <span style="font-size:1.2rem;font-weight:700;color:var(--primary)">${fmt(order.total)}</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="font-weight:600;margin-bottom:.75rem">Customer</div>
+        <div style="font-weight:500;margin-bottom:.25rem">${order.customerName}</div>
+        <div style="font-size:.8rem;color:var(--text-muted)">${order.customer_id}</div>
+      </div>
+
+      ${currentUser.role === 'admin' ? `
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:.75rem">Update Status</div>
+          <select class="form-control" onchange="updateOrderStatus('${order.id}',this.value);navigate('admin-orders')">
+            ${['pending','processing','shipped','delivered','cancelled'].map(s=>`<option value="${s}" ${order.status===s?'selected':''}>${s}</option>`).join('')}
+          </select>
+        </div>
+      ` : ''}
+    </div>
+  `);
 }
