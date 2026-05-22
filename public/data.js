@@ -229,12 +229,7 @@ const Orders = {
       if (!res.ok) throw new Error(await res.text());
       const created = await res.json();
       ordersCache.unshift(created);
-
-      // Deduct stock
-      for (const item of items) {
-        await Products.adjustStock(item.sku, -item.qty, `Order ${created.id}`);
-      }
-
+      // Stock is NOT deducted until order is delivered
       return created;
     } catch (err) {
       throw err;
@@ -243,11 +238,29 @@ const Orders = {
 
   updateStatus: async (id, status) => {
     try {
+      const order = ordersCache.find(o => o.id === id);
+      const oldStatus = order?.status;
+
       const res = await fetch(`/api/orders/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) });
       if (!res.ok) throw new Error(await res.text());
       const updated = await res.json();
       const idx = ordersCache.findIndex(o => o.id === id);
       if (idx >= 0) ordersCache[idx] = updated;
+
+      // Deduct stock only when order is delivered
+      if (status === 'delivered' && oldStatus !== 'delivered') {
+        for (const item of order.items) {
+          await Products.adjustStock(item.sku, -item.qty, `Order ${order.id} delivered`);
+        }
+      }
+
+      // Restore stock if order is cancelled
+      if (status === 'cancelled' && oldStatus === 'delivered') {
+        for (const item of order.items) {
+          await Products.adjustStock(item.sku, item.qty, `Order ${order.id} cancelled`);
+        }
+      }
+
       return updated;
     } catch (err) {
       throw err;
