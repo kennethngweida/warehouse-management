@@ -177,7 +177,16 @@ let scanner = null;
 
 async function openBarcodeScanner(mode = 'search') {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    toast('Camera not supported on this device', 'error');
+    showModal(`
+      <div class="modal-header"><div class="modal-title">Camera Not Available</div><button class="modal-close" onclick="closeModal()">×</button></div>
+      <div class="modal-body">
+        <p>Your device doesn't support camera scanning.</p>
+        <p style="margin-top:.75rem;color:var(--text-muted);font-size:.9rem">Use manual entry instead:</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary w-full" onclick="closeModal();openManualBarcodeEntry('${mode}')">Enter Barcode Manually</button>
+      </div>
+    `);
     return;
   }
 
@@ -190,15 +199,48 @@ async function openBarcodeScanner(mode = 'search') {
     stream.getTracks().forEach(track => track.stop());
   } catch (err) {
     if (err.name === 'NotAllowedError') {
-      toast('❌ Camera permission denied. Please allow camera access in your device settings.', 'error');
+      showModal(`
+        <div class="modal-header"><div class="modal-title">Camera Permission Needed</div><button class="modal-close" onclick="closeModal()">×</button></div>
+        <div class="modal-body">
+          <p>Camera permission was denied.</p>
+          <p style="margin-top:.75rem;color:var(--text-muted);font-size:.9rem">Please enable camera access in your device settings, or use manual entry:</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary w-full" onclick="closeModal();openManualBarcodeEntry('${mode}')">Enter Manually</button>
+        </div>
+      `);
     } else if (err.name === 'NotFoundError') {
       toast('❌ No camera found on this device', 'error');
     } else {
-      toast('❌ Unable to access camera: ' + err.message, 'error');
+      toast('❌ Unable to access camera', 'error');
     }
     return;
   }
 
+  // Check if library is loaded
+  let retries = 0;
+  const waitForLibrary = setInterval(() => {
+    retries++;
+    if (typeof Html5Qrcode !== 'undefined') {
+      clearInterval(waitForLibrary);
+      initializeBarcodeScanner(mode);
+    } else if (retries > 50) {
+      clearInterval(waitForLibrary);
+      showModal(`
+        <div class="modal-header"><div class="modal-title">Scanner Unavailable</div><button class="modal-close" onclick="closeModal()">×</button></div>
+        <div class="modal-body">
+          <p>Scanner library failed to load.</p>
+          <p style="margin-top:.75rem;color:var(--text-muted);font-size:.9rem">Please try manual entry or refresh the page:</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary w-full" onclick="closeModal();openManualBarcodeEntry('${mode}')">Enter Manually</button>
+        </div>
+      `);
+    }
+  }, 100);
+}
+
+function initializeBarcodeScanner(mode) {
   showModal(`
     <div class="modal-header"><div class="modal-title">Scan Barcode</div><button class="modal-close" onclick="closeBarcodeScanner()">×</button></div>
     <div class="modal-body">
@@ -209,11 +251,6 @@ async function openBarcodeScanner(mode = 'search') {
 
   setTimeout(() => {
     try {
-      if (typeof Html5Qrcode === 'undefined') {
-        set('scan-result', '❌ Scanner library not loaded. Please refresh the page.');
-        return;
-      }
-
       scanner = new Html5Qrcode('qr-reader');
       scanner.start(
         { facingMode: 'environment' },
@@ -229,13 +266,13 @@ async function openBarcodeScanner(mode = 'search') {
           // Silent error handling for continuous scanning
         }
       ).catch(err => {
-        set('scan-result', '❌ Scanner error: ' + err.message);
+        set('scan-result', '❌ Scanner failed: ' + err.message);
       });
     } catch (err) {
-      set('scan-result', '❌ Error: ' + err.message);
+      set('scan-result', '❌ Error initializing scanner');
       console.error('Scanner error:', err);
     }
-  }, 100);
+  }, 200);
 }
 
 function closeBarcodeScanner() {
