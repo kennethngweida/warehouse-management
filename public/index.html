@@ -186,13 +186,11 @@
      MOBILE ADMIN APP
 ═══════════════════════════════════════════════════════ -->
 <div id="page-mobile-admin" class="hidden" style="display:flex;flex-direction:column;min-height:100vh">
-  <nav class="mobile-nav">
-    <div style="flex:1">
-      <div class="mobile-nav-title" id="mobile-admin-title">Dashboard</div>
-    </div>
-    <button class="btn btn-ghost" onclick="logout()" style="padding:0.5rem;font-size:1.2rem">🚪</button>
+  <nav class="mobile-nav" style="justify-content:space-between;padding:0 1rem">
+    <span style="font-weight:700;font-size:1rem">WarehousePro</span>
+    <button class="btn btn-ghost" onclick="logout()" style="padding:0.5rem;font-size:1.2rem;border:none;background:none;cursor:pointer">🚪</button>
   </nav>
-  <main id="mobile-admin-content" style="flex:1;overflow-y:auto;padding-bottom:1rem"></main>
+  <main id="mobile-admin-content" style="flex:1;overflow-y:auto"></main>
   <nav class="mobile-bottom-nav">
     <button class="mobile-nav-item" onclick="navigate('admin-dashboard')">
       <span>📊</span>
@@ -242,13 +240,11 @@
      MOBILE CUSTOMER APP
 ═══════════════════════════════════════════════════════ -->
 <div id="page-mobile-customer" class="hidden" style="display:flex;flex-direction:column;min-height:100vh">
-  <nav class="mobile-nav">
-    <div style="flex:1">
-      <div class="mobile-nav-title" id="mobile-cust-title">Catalog</div>
-    </div>
-    <button class="btn btn-ghost" onclick="logout()" style="padding:0.5rem;font-size:1.2rem">🚪</button>
+  <nav class="mobile-nav" style="justify-content:space-between;padding:0 1rem">
+    <span style="font-weight:700;font-size:1rem">WarehousePro</span>
+    <button class="btn btn-ghost" onclick="logout()" style="padding:0.5rem;font-size:1.2rem;border:none;background:none;cursor:pointer">🚪</button>
   </nav>
-  <main id="mobile-customer-content" style="flex:1;overflow-y:auto;padding-bottom:1rem"></main>
+  <main id="mobile-customer-content" style="flex:1;overflow-y:auto"></main>
   <nav class="mobile-bottom-nav">
     <button class="mobile-nav-item" onclick="navigate('cust-dashboard')">
       <span>🏠</span>

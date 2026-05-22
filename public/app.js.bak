@@ -1581,7 +1581,7 @@ function renderMobileInventory() {
 }
 
 function renderMobileAdminOrders() {
-
+  el('mobile-admin-title').textContent = 'Orders';
   const orders = Orders.all();
 
   set('mobile-admin-content', `
@@ -1616,7 +1616,7 @@ function renderMobileAdminOrders() {
 }
 
 function renderMobileStockHistory() {
-
+  el('mobile-admin-title').textContent = 'History';
   const movements = Movements.all().slice(0, 20);
 
   set('mobile-admin-content', `
@@ -1638,7 +1638,7 @@ function renderMobileStockHistory() {
 }
 
 function renderMobileAdminUsers() {
-
+  el('mobile-admin-title').textContent = 'Users';
   const users = Users.all();
 
   set('mobile-admin-content', `
@@ -1658,7 +1658,7 @@ function renderMobileAdminUsers() {
 }
 
 function renderMobileAdminProfile() {
-
+  el('mobile-admin-title').textContent = 'Settings';
   set('mobile-admin-content', `
     <div class="mobile-content">
       <div class="card">
@@ -1733,6 +1733,7 @@ async function changeAdminMobilePassword() {
 }
 
 function renderMobileCustDashboard() {
+  el('mobile-cust-title').textContent = 'Home';
   const myOrders = Orders.byCustomer(currentUser.id);
 
   set('mobile-customer-content', `
@@ -1759,6 +1760,7 @@ function renderMobileCustDashboard() {
 }
 
 function renderMobileCatalog() {
+  el('mobile-cust-title').textContent = 'Shop';
   const products = Products.all();
 
   set('mobile-customer-content', `
@@ -1784,6 +1786,7 @@ function renderMobileCatalog() {
 }
 
 function renderMobileCart() {
+  el('mobile-cust-title').textContent = 'Cart';
 
   if (cart.length === 0) {
     set('mobile-customer-content', `
@@ -1825,6 +1828,7 @@ function renderMobileCart() {
 }
 
 function renderMobileMyOrders() {
+  el('mobile-cust-title').textContent = 'Orders';
   const orders = Orders.byCustomer(currentUser.id);
 
   set('mobile-customer-content', `
@@ -1848,6 +1852,7 @@ function renderMobileMyOrders() {
 }
 
 function renderMobileCustProfile() {
+  el('mobile-cust-title').textContent = 'Settings';
   set('mobile-customer-content', `
     <div class="mobile-content">
       <div class="card">
