@@ -836,6 +836,7 @@ async function confirmAdjust(sku) {
 
 // ── Bulk Stock Management ─────────────────────────────────────
 let bulkChecked = [];
+let bulkQuantities = {};
 
 function renderBulkStock() {
   const products = Products.all();
@@ -874,30 +875,37 @@ function renderBulkStock() {
         </div>
       </div>
 
+      ${bulkChecked.length === 0 ? '' : `
       <div class="card">
         <div style="margin-bottom:1.5rem">
-          <div style="font-weight:600;margin-bottom:.75rem">Adjustment</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem">
-            <div>
-              <label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:.3rem">Operation</label>
-              <select id="bulk-operation" class="form-control">
-                <option value="in">📥 Stock In (Add)</option>
-                <option value="out">📤 Stock Out (Remove)</option>
-              </select>
+          <div style="font-weight:600;margin-bottom:1rem">Quantities</div>
+          ${Products.all().filter(p => bulkChecked.includes(p.sku)).map(p => `
+            <div style="display:grid;grid-template-columns:1fr auto;gap:.75rem;align-items:center;margin-bottom:1rem;padding:.75rem;background:var(--bg-light);border-radius:8px">
+              <div>
+                <div style="font-weight:500;font-size:.9rem">${p.name}</div>
+                <div style="font-size:.75rem;color:var(--text-muted)">${p.sku}</div>
+              </div>
+              <input type="number" id="bulk-qty-${p.sku}" class="form-control" style="width:80px" min="1" value="${bulkQuantities[p.sku] || 10}">
             </div>
-            <div>
-              <label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:.3rem">Quantity</label>
-              <input id="bulk-qty" class="form-control" type="number" min="1" value="10" placeholder="Enter quantity">
-            </div>
-          </div>
-          <div>
-            <label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:.3rem">Reason</label>
-            <input id="bulk-reason" class="form-control" type="text" placeholder="e.g. Restock, Damage, Inventory correction" value="">
-          </div>
+          `).join('')}
+        </div>
+
+        <div style="margin-bottom:1.5rem">
+          <label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:.3rem">Operation</label>
+          <select id="bulk-operation" class="form-control">
+            <option value="in">📥 Stock In (Add)</option>
+            <option value="out">📤 Stock Out (Remove)</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom:1rem">
+          <label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:.3rem">Reason</label>
+          <input id="bulk-reason" class="form-control" type="text" placeholder="e.g. Restock, Damage, Inventory correction" value="">
         </div>
 
         <button class="btn btn-primary btn-lg w-full" onclick="applyBulkStock()">Apply to ${bulkChecked.length} Product${bulkChecked.length!==1?'s':''}</button>
       </div>
+      `}
     </div>
   `);
 }
@@ -905,19 +913,24 @@ function renderBulkStock() {
 function toggleBulkSelect(sku) {
   if (bulkChecked.includes(sku)) {
     bulkChecked = bulkChecked.filter(s => s !== sku);
+    delete bulkQuantities[sku];
   } else {
     bulkChecked.push(sku);
+    bulkQuantities[sku] = 10;
   }
   renderBulkStock();
 }
 
 function bulkSelectAll() {
   bulkChecked = Products.all().map(p => p.sku);
+  bulkQuantities = {};
+  bulkChecked.forEach(sku => bulkQuantities[sku] = 10);
   renderBulkStock();
 }
 
 function bulkClearAll() {
   bulkChecked = [];
+  bulkQuantities = {};
   renderBulkStock();
 }
 
@@ -928,20 +941,28 @@ async function applyBulkStock() {
   }
 
   const operation = el('bulk-operation').value;
-  const qty = parseInt(el('bulk-qty').value);
   const reason = el('bulk-reason').value.trim() || `Bulk ${operation === 'in' ? 'stock in' : 'stock out'}`;
 
-  if (isNaN(qty) || qty <= 0) {
-    toast('Please enter a valid quantity', 'warning');
-    return;
-  }
-
-  const adjustQty = operation === 'in' ? qty : -qty;
   let updated = 0;
   let errors = 0;
+  let validationErrors = [];
 
   for (const sku of bulkChecked) {
+    const qtyInput = el(`bulk-qty-${sku}`);
+    if (!qtyInput) {
+      errors++;
+      continue;
+    }
+
+    const qty = parseInt(qtyInput.value);
+    if (isNaN(qty) || qty <= 0) {
+      validationErrors.push(sku);
+      errors++;
+      continue;
+    }
+
     try {
+      const adjustQty = operation === 'in' ? qty : -qty;
       await Products.adjustStock(sku, adjustQty, reason);
       updated++;
     } catch (err) {
@@ -951,7 +972,10 @@ async function applyBulkStock() {
   }
 
   bulkChecked = [];
-  if (errors === 0) {
+  bulkQuantities = {};
+  if (validationErrors.length > 0) {
+    toast(`❌ Invalid quantities for: ${validationErrors.join(', ')}`, 'warning');
+  } else if (errors === 0) {
     toast(`✅ Updated ${updated} product${updated!==1?'s':''}`, 'success');
   } else {
     toast(`✅ Updated ${updated} products, ${errors} failed`, 'warning');
@@ -1990,7 +2014,21 @@ function renderMobileBulkStock() {
         </div>
       </div>
 
+      ${bulkChecked.length === 0 ? '' : `
       <div class="card">
+        <div style="margin-bottom:1rem">
+          <div style="font-weight:600;font-size:.9rem;margin-bottom:.75rem">Quantities</div>
+          ${Products.all().filter(p => bulkChecked.includes(p.sku)).map(p => `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;padding:.5rem;background:var(--bg-light);border-radius:6px">
+              <div>
+                <div style="font-weight:500;font-size:.85rem">${p.name}</div>
+                <div style="font-size:.7rem;color:var(--text-muted)">${p.sku}</div>
+              </div>
+              <input type="number" id="bulk-qty-${p.sku}" class="form-control" style="width:70px" min="1" value="${bulkQuantities[p.sku] || 10}">
+            </div>
+          `).join('')}
+        </div>
+
         <div style="margin-bottom:1rem">
           <label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:.3rem">Operation</label>
           <select id="bulk-operation" class="form-control">
@@ -2000,17 +2038,13 @@ function renderMobileBulkStock() {
         </div>
 
         <div style="margin-bottom:1rem">
-          <label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:.3rem">Quantity</label>
-          <input id="bulk-qty" class="form-control" type="number" min="1" value="10" placeholder="Enter quantity">
-        </div>
-
-        <div style="margin-bottom:1rem">
           <label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:.3rem">Reason</label>
           <input id="bulk-reason" class="form-control" type="text" placeholder="e.g. Restock, Damage">
         </div>
 
         <button class="btn btn-primary btn-lg w-full" onclick="applyBulkStock()">Apply to ${bulkChecked.length} Product${bulkChecked.length!==1?'s':''}</button>
       </div>
+      `}
     </div>
   `);
 }
