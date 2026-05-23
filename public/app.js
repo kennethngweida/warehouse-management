@@ -839,7 +839,7 @@ let bulkChecked = [];
 let bulkQuantities = {};
 let bulkSearch = '';
 let bulkSearchTimeout;
-let bulkOperation = 'in';
+let bulkOperation = '';
 
 function renderBulkStock() {
   const products = Products.all();
