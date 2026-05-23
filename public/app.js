@@ -902,11 +902,26 @@ function renderBulkStock() {
 
         <div style="margin-bottom:1.5rem">
           <label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:.3rem">Operation</label>
-          <select id="bulk-operation" class="form-control">
+          <select id="bulk-operation" class="form-control" onchange="renderBulkStock()">
             <option value="in">📥 Stock In (Add)</option>
             <option value="out">📤 Stock Out (Remove)</option>
           </select>
         </div>
+
+        ${el('bulk-operation') && el('bulk-operation').value === 'in' ? `
+        <div style="margin-bottom:1.5rem">
+          <div style="font-weight:600;margin-bottom:1rem">Cost Prices</div>
+          ${Products.all().filter(p => bulkChecked.includes(p.sku)).map(p => `
+            <div style="display:grid;grid-template-columns:1fr auto;gap:.75rem;align-items:center;margin-bottom:1rem;padding:.75rem;background:var(--bg-light);border-radius:8px">
+              <div>
+                <div style="font-weight:500;font-size:.9rem">${p.name}</div>
+                <div style="font-size:.75rem;color:var(--text-muted)">Current: $${(p.cost_price || 0).toFixed(2)}</div>
+              </div>
+              <input type="number" id="bulk-cost-${p.sku}" class="form-control" style="width:100px" min="0" step="0.01" placeholder="${(p.cost_price || 0).toFixed(2)}">
+            </div>
+          `).join('')}
+        </div>
+        ` : ''}
 
         <div style="margin-bottom:1rem">
           <label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:.3rem">Reason</label>
@@ -974,7 +989,16 @@ async function applyBulkStock() {
 
     try {
       const adjustQty = operation === 'in' ? qty : -qty;
-      await Products.adjustStock(sku, adjustQty, reason);
+      let costPrice = null;
+
+      if (operation === 'in') {
+        const costInput = el(`bulk-cost-${sku}`);
+        if (costInput && costInput.value.trim() !== '') {
+          costPrice = costInput.value;
+        }
+      }
+
+      await Products.adjustStock(sku, adjustQty, reason, costPrice);
       updated++;
     } catch (err) {
       errors++;
@@ -984,6 +1008,7 @@ async function applyBulkStock() {
 
   bulkChecked = [];
   bulkQuantities = {};
+  bulkSearch = '';
   if (validationErrors.length > 0) {
     toast(`❌ Invalid quantities for: ${validationErrors.join(', ')}`, 'warning');
   } else if (errors === 0) {
@@ -2050,11 +2075,26 @@ function renderMobileBulkStock() {
 
         <div style="margin-bottom:1rem">
           <label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:.3rem">Operation</label>
-          <select id="bulk-operation" class="form-control">
+          <select id="bulk-operation" class="form-control" onchange="renderMobileBulkStock()">
             <option value="in">📥 Stock In (Add)</option>
             <option value="out">📤 Stock Out (Remove)</option>
           </select>
         </div>
+
+        ${el('bulk-operation') && el('bulk-operation').value === 'in' ? `
+        <div style="margin-bottom:1rem">
+          <div style="font-weight:600;font-size:.9rem;margin-bottom:.75rem">Cost Prices</div>
+          ${Products.all().filter(p => bulkChecked.includes(p.sku)).map(p => `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;padding:.5rem;background:var(--bg-light);border-radius:6px">
+              <div>
+                <div style="font-weight:500;font-size:.85rem">${p.name}</div>
+                <div style="font-size:.7rem;color:var(--text-muted)">Current: $${(p.cost_price || 0).toFixed(2)}</div>
+              </div>
+              <input type="number" id="bulk-cost-${p.sku}" class="form-control" style="width:80px" min="0" step="0.01" placeholder="${(p.cost_price || 0).toFixed(2)}">
+            </div>
+          `).join('')}
+        </div>
+        ` : ''}
 
         <div style="margin-bottom:1rem">
           <label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:.3rem">Reason</label>

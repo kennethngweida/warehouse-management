@@ -176,11 +176,15 @@ const Products = {
     productsCache = productsCache.filter(p => p.sku !== sku);
   },
 
-  adjustStock: async (sku, qty, reason) => {
+  adjustStock: async (sku, qty, reason, costPrice = null) => {
     const p = productsCache.find(x => x.sku === sku);
     if (!p) return;
     const newStock = Math.max(0, p.stock + qty);
-    const res = await fetch(`/api/products/${sku}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...p, stock: newStock }) });
+    const updateData = { ...p, stock: newStock };
+    if (costPrice !== null && costPrice !== '') {
+      updateData.cost_price = Number(costPrice);
+    }
+    const res = await fetch(`/api/products/${sku}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updateData) });
     if (!res.ok) throw new Error(await res.text());
     const updated = await res.json();
     const idx = productsCache.findIndex(x => x.sku === sku);
