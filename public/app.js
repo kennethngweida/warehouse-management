@@ -839,6 +839,7 @@ let bulkChecked = [];
 let bulkQuantities = {};
 let bulkSearch = '';
 let bulkSearchTimeout;
+let bulkOperation = 'in';
 
 function renderBulkStock() {
   const products = Products.all();
@@ -902,13 +903,13 @@ function renderBulkStock() {
 
         <div style="margin-bottom:1.5rem">
           <label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:.3rem">Operation</label>
-          <select id="bulk-operation" class="form-control" onchange="renderBulkStock()">
+          <select id="bulk-operation" class="form-control" value="${bulkOperation}" onchange="bulkOperation = this.value; renderBulkStock()">
             <option value="in">📥 Stock In (Add)</option>
             <option value="out">📤 Stock Out (Remove)</option>
           </select>
         </div>
 
-        ${el('bulk-operation') && el('bulk-operation').value === 'in' ? `
+        ${bulkOperation === 'in' ? `
         <div style="margin-bottom:1.5rem">
           <div style="font-weight:600;margin-bottom:1rem">Cost Prices</div>
           ${Products.all().filter(p => bulkChecked.includes(p.sku)).map(p => `
@@ -966,7 +967,7 @@ async function applyBulkStock() {
     return;
   }
 
-  const operation = el('bulk-operation').value;
+  const operation = bulkOperation;
   const reason = el('bulk-reason').value.trim() || `Bulk ${operation === 'in' ? 'stock in' : 'stock out'}`;
 
   let updated = 0;
@@ -2075,13 +2076,13 @@ function renderMobileBulkStock() {
 
         <div style="margin-bottom:1rem">
           <label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:.3rem">Operation</label>
-          <select id="bulk-operation" class="form-control" onchange="renderMobileBulkStock()">
+          <select id="bulk-operation" class="form-control" value="${bulkOperation}" onchange="bulkOperation = this.value; renderMobileBulkStock()">
             <option value="in">📥 Stock In (Add)</option>
             <option value="out">📤 Stock Out (Remove)</option>
           </select>
         </div>
 
-        ${el('bulk-operation') && el('bulk-operation').value === 'in' ? `
+        ${bulkOperation === 'in' ? `
         <div style="margin-bottom:1rem">
           <div style="font-weight:600;font-size:.9rem;margin-bottom:.75rem">Cost Prices</div>
           ${Products.all().filter(p => bulkChecked.includes(p.sku)).map(p => `
