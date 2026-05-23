@@ -914,7 +914,7 @@ function renderBulkStock() {
               ${bulkOperation === 'in' ? `
               <div style="display:flex;flex-direction:column;gap:.3rem;align-items:center">
                 <label style="font-size:.7rem;font-weight:600;color:var(--text-muted)">Cost</label>
-                <input type="number" id="bulk-cost-${p.sku}" class="form-control" style="width:80px" min="0" step="0.01" value="${p.cost_price ? parseFloat(p.cost_price) : 0}">
+                <input type="number" id="bulk-cost-${p.sku}" class="form-control" style="width:90px;padding:0.5rem;text-align:center" min="0" step="0.01" value="${p.cost_price && p.cost_price !== 0 ? parseFloat(p.cost_price) : ''}" placeholder="0.00">
               </div>
               ` : ''}
             </div>
@@ -2089,7 +2089,7 @@ function renderMobileBulkStock() {
                 ${bulkOperation === 'in' ? `
                 <div style="display:flex;flex-direction:column;align-items:center">
                   <label style="font-size:.65rem;font-weight:600;color:var(--text-muted);margin-bottom:.2rem">Cost</label>
-                  <input type="number" id="bulk-cost-${p.sku}" class="form-control" style="width:70px" min="0" step="0.01" value="${p.cost_price ? parseFloat(p.cost_price) : 0}">
+                  <input type="number" id="bulk-cost-${p.sku}" class="form-control" style="width:75px;padding:0.4rem;text-align:center" min="0" step="0.01" value="${p.cost_price && p.cost_price !== 0 ? parseFloat(p.cost_price) : ''}" placeholder="0.00">
                 </div>
                 ` : ''}
               </div>
