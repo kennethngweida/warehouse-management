@@ -889,10 +889,10 @@ function renderBulkStock() {
       <div class="card" style="margin-bottom:1.5rem;padding:1.5rem">
         <div style="margin-bottom:0">
           <label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:.5rem">Select Operation</label>
-          <select id="bulk-operation" class="form-control" value="${bulkOperation}" onchange="bulkOperation = this.value; renderBulkStock()" style="font-size:1rem;padding:0.75rem">
-            <option value="">-- Choose Operation --</option>
-            <option value="in">📥 Stock In (Add)</option>
-            <option value="out">📤 Stock Out (Remove)</option>
+          <select id="bulk-operation" class="form-control" onchange="bulkOperation = this.value; renderBulkStock()" style="font-size:1rem;padding:0.75rem">
+            <option value="" ${bulkOperation === '' ? 'selected' : ''}>-- Choose Operation --</option>
+            <option value="in" ${bulkOperation === 'in' ? 'selected' : ''}>📥 Stock In (Add)</option>
+            <option value="out" ${bulkOperation === 'out' ? 'selected' : ''}>📤 Stock Out (Remove)</option>
           </select>
         </div>
       </div>
@@ -2063,10 +2063,10 @@ function renderMobileBulkStock() {
       <div class="card" style="margin-bottom:1rem;padding:1rem">
         <div style="margin-bottom:0">
           <label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:.5rem">Select Operation</label>
-          <select id="bulk-operation" class="form-control" value="${bulkOperation}" onchange="bulkOperation = this.value; renderMobileBulkStock()" style="font-size:1rem">
-            <option value="">-- Choose Operation --</option>
-            <option value="in">📥 Stock In (Add)</option>
-            <option value="out">📤 Stock Out (Remove)</option>
+          <select id="bulk-operation" class="form-control" onchange="bulkOperation = this.value; renderMobileBulkStock()" style="font-size:1rem">
+            <option value="" ${bulkOperation === '' ? 'selected' : ''}>-- Choose Operation --</option>
+            <option value="in" ${bulkOperation === 'in' ? 'selected' : ''}>📥 Stock In (Add)</option>
+            <option value="out" ${bulkOperation === 'out' ? 'selected' : ''}>📤 Stock Out (Remove)</option>
           </select>
         </div>
       </div>
