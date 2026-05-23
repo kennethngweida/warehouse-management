@@ -838,6 +838,7 @@ async function confirmAdjust(sku) {
 let bulkChecked = [];
 let bulkQuantities = {};
 let bulkSearch = '';
+let bulkSearchTimeout;
 
 function renderBulkStock() {
   const products = Products.all();
@@ -855,7 +856,7 @@ function renderBulkStock() {
       <div class="card" style="margin-bottom:1.5rem;padding:1.5rem">
         <div style="margin-bottom:1rem">
           <div style="font-weight:600;margin-bottom:.5rem">Select Products</div>
-          <input type="text" id="bulk-search" class="form-control" placeholder="Search by name or SKU..." value="${bulkSearch}" onkeyup="bulkSearch = el('bulk-search').value; renderBulkStock()" style="margin-bottom:.75rem">
+          <input type="text" id="bulk-search" class="form-control" placeholder="Search by name or SKU..." value="${bulkSearch}" onkeyup="bulkSearch = el('bulk-search').value; clearTimeout(bulkSearchTimeout); bulkSearchTimeout = setTimeout(() => renderBulkStock(), 200)" style="margin-bottom:.75rem">
           <div style="display:flex;gap:.5rem;flex-wrap:wrap">
             <button class="btn btn-sm btn-outline" onclick="bulkSelectAll()">Select All</button>
             <button class="btn btn-sm btn-outline" onclick="bulkClearAll()">Clear All</button>
@@ -2005,7 +2006,7 @@ function renderMobileBulkStock() {
     <div class="mobile-content">
       <div style="margin-bottom:1rem">
         <div style="font-weight:600;font-size:.9rem;margin-bottom:.5rem">Select Products</div>
-        <input type="text" id="bulk-search" class="form-control" placeholder="Search by name or SKU..." value="${bulkSearch}" onkeyup="bulkSearch = el('bulk-search').value; renderMobileBulkStock()" style="margin-bottom:.75rem">
+        <input type="text" id="bulk-search" class="form-control" placeholder="Search by name or SKU..." value="${bulkSearch}" onkeyup="bulkSearch = el('bulk-search').value; clearTimeout(bulkSearchTimeout); bulkSearchTimeout = setTimeout(() => renderMobileBulkStock(), 200)" style="margin-bottom:.75rem">
         <div style="display:flex;gap:.5rem;margin-bottom:.75rem">
           <button class="btn btn-sm btn-outline" style="flex:1" onclick="bulkSelectAll()">All</button>
           <button class="btn btn-sm btn-outline" style="flex:1" onclick="bulkClearAll()">Clear</button>
