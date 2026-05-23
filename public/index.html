@@ -192,7 +192,7 @@
     <button class="btn btn-ghost" onclick="logout()" style="padding:0.3rem 0.5rem;font-size:1rem;border:none;background:none;cursor:pointer">🚪</button>
   </header>
   <main id="mobile-admin-content" style="flex:1;overflow-y:auto"></main>
-  <nav class="mobile-bottom-nav">
+  <nav class="mobile-bottom-nav" style="overflow-x:auto">
     <button class="mobile-nav-item" onclick="navigate('admin-dashboard')">
       <span>📊</span>
       <span>Dashboard</span>
@@ -200,6 +200,10 @@
     <button class="mobile-nav-item" onclick="navigate('inventory')">
       <span>📦</span>
       <span>Inventory</span>
+    </button>
+    <button class="mobile-nav-item" onclick="navigate('bulk-stock')">
+      <span>📥</span>
+      <span>Bulk</span>
     </button>
     <button class="mobile-nav-item" onclick="navigate('admin-orders')">
       <span>🧾</span>
