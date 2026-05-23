@@ -837,6 +837,7 @@ async function confirmAdjust(sku) {
 // ── Bulk Stock Management ─────────────────────────────────────
 let bulkChecked = [];
 let bulkQuantities = {};
+let bulkSearch = '';
 
 function renderBulkStock() {
   const products = Products.all();
@@ -854,6 +855,7 @@ function renderBulkStock() {
       <div class="card" style="margin-bottom:1.5rem;padding:1.5rem">
         <div style="margin-bottom:1rem">
           <div style="font-weight:600;margin-bottom:.5rem">Select Products</div>
+          <input type="text" id="bulk-search" class="form-control" placeholder="Search by name or SKU..." value="${bulkSearch}" onkeyup="bulkSearch = el('bulk-search').value; renderBulkStock()" style="margin-bottom:.75rem">
           <div style="display:flex;gap:.5rem;flex-wrap:wrap">
             <button class="btn btn-sm btn-outline" onclick="bulkSelectAll()">Select All</button>
             <button class="btn btn-sm btn-outline" onclick="bulkClearAll()">Clear All</button>
@@ -862,16 +864,23 @@ function renderBulkStock() {
         </div>
 
         <div style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:.75rem">
-          ${products.length === 0
-            ? '<div style="text-align:center;color:var(--text-muted);padding:1rem">No products</div>'
-            : products.map(p => `
+          ${(() => {
+            const filtered = products.filter(p =>
+              bulkSearch === '' ||
+              p.name.toLowerCase().includes(bulkSearch.toLowerCase()) ||
+              p.sku.toLowerCase().includes(bulkSearch.toLowerCase())
+            );
+            return filtered.length === 0
+            ? '<div style="text-align:center;color:var(--text-muted);padding:1rem">No products found</div>'
+            : filtered.map(p => `
               <div style="display:flex;align-items:center;padding:.5rem;border-bottom:1px solid var(--border-light)">
                 <input type="checkbox" id="bulk-${p.sku}" ${bulkChecked.includes(p.sku) ? 'checked' : ''} onchange="toggleBulkSelect('${p.sku}')" style="margin-right:.75rem;cursor:pointer;width:18px;height:18px">
                 <label for="bulk-${p.sku}" style="flex:1;cursor:pointer">
                   <div style="font-weight:500">${p.name}</div>
                   <div style="font-size:.75rem;color:var(--text-muted)">${p.sku} • ${p.stock} units</div>
                 </label>
-              </div>`).join('')}
+              </div>`).join('');
+          })()}
         </div>
       </div>
 
@@ -931,6 +940,7 @@ function bulkSelectAll() {
 function bulkClearAll() {
   bulkChecked = [];
   bulkQuantities = {};
+  bulkSearch = '';
   renderBulkStock();
 }
 
@@ -1995,22 +2005,30 @@ function renderMobileBulkStock() {
     <div class="mobile-content">
       <div style="margin-bottom:1rem">
         <div style="font-weight:600;font-size:.9rem;margin-bottom:.5rem">Select Products</div>
+        <input type="text" id="bulk-search" class="form-control" placeholder="Search by name or SKU..." value="${bulkSearch}" onkeyup="bulkSearch = el('bulk-search').value; renderMobileBulkStock()" style="margin-bottom:.75rem">
         <div style="display:flex;gap:.5rem;margin-bottom:.75rem">
           <button class="btn btn-sm btn-outline" style="flex:1" onclick="bulkSelectAll()">All</button>
           <button class="btn btn-sm btn-outline" style="flex:1" onclick="bulkClearAll()">Clear</button>
           <div style="flex:1;text-align:center;padding:.5rem;background:var(--bg-light);border-radius:6px;font-size:.8rem;font-weight:600">${bulkChecked.length} selected</div>
         </div>
         <div style="max-height:250px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">
-          ${products.length === 0
-            ? '<div style="text-align:center;color:var(--text-muted);padding:1rem">No products</div>'
-            : products.map(p => `
+          ${(() => {
+            const filtered = products.filter(p =>
+              bulkSearch === '' ||
+              p.name.toLowerCase().includes(bulkSearch.toLowerCase()) ||
+              p.sku.toLowerCase().includes(bulkSearch.toLowerCase())
+            );
+            return filtered.length === 0
+            ? '<div style="text-align:center;color:var(--text-muted);padding:1rem">No products found</div>'
+            : filtered.map(p => `
               <div style="display:flex;align-items:center;padding:.75rem;border-bottom:1px solid var(--border-light)">
                 <input type="checkbox" id="bulk-mobile-${p.sku}" ${bulkChecked.includes(p.sku) ? 'checked' : ''} onchange="toggleBulkSelect('${p.sku}')" style="margin-right:.5rem;cursor:pointer;width:18px;height:18px">
                 <label for="bulk-mobile-${p.sku}" style="flex:1;cursor:pointer">
                   <div style="font-weight:500;font-size:.9rem">${p.name}</div>
                   <div style="font-size:.75rem;color:var(--text-muted)">${p.sku} • ${p.stock} units</div>
                 </label>
-              </div>`).join('')}
+              </div>`).join('');
+          })()}
         </div>
       </div>
 
