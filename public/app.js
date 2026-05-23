@@ -886,7 +886,18 @@ function renderBulkStock() {
         </div>
       </div>
 
-      ${bulkChecked.length === 0 ? '' : `
+      <div class="card" style="margin-bottom:1.5rem;padding:1.5rem">
+        <div style="margin-bottom:0">
+          <label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:.5rem">Select Operation</label>
+          <select id="bulk-operation" class="form-control" value="${bulkOperation}" onchange="bulkOperation = this.value; renderBulkStock()" style="font-size:1rem;padding:0.75rem">
+            <option value="">-- Choose Operation --</option>
+            <option value="in">📥 Stock In (Add)</option>
+            <option value="out">📤 Stock Out (Remove)</option>
+          </select>
+        </div>
+      </div>
+
+      ${bulkOperation && bulkChecked.length > 0 ? `
       <div class="card">
         <div style="margin-bottom:1.5rem">
           <div style="font-weight:600;margin-bottom:1rem">Quantities ${bulkOperation === 'in' ? '& Cost Prices' : ''}</div>
@@ -910,29 +921,6 @@ function renderBulkStock() {
           `).join('')}
         </div>
 
-        <div style="margin-bottom:1.5rem">
-          <label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:.3rem">Operation</label>
-          <select id="bulk-operation" class="form-control" value="${bulkOperation}" onchange="bulkOperation = this.value; renderBulkStock()">
-            <option value="in">📥 Stock In (Add)</option>
-            <option value="out">📤 Stock Out (Remove)</option>
-          </select>
-        </div>
-
-        ${bulkOperation === 'in' ? `
-        <div style="margin-bottom:1.5rem">
-          <div style="font-weight:600;margin-bottom:1rem">Cost Prices</div>
-          ${Products.all().filter(p => bulkChecked.includes(p.sku)).map(p => `
-            <div style="display:grid;grid-template-columns:1fr auto;gap:.75rem;align-items:center;margin-bottom:1rem;padding:.75rem;background:var(--bg-light);border-radius:8px">
-              <div>
-                <div style="font-weight:500;font-size:.9rem">${p.name}</div>
-                <div style="font-size:.75rem;color:var(--text-muted)">Current: $${(p.cost_price || 0).toFixed(2)}</div>
-              </div>
-              <input type="number" id="bulk-cost-${p.sku}" class="form-control" style="width:100px" min="0" step="0.01" placeholder="${(p.cost_price || 0).toFixed(2)}">
-            </div>
-          `).join('')}
-        </div>
-        ` : ''}
-
         <div style="margin-bottom:1rem">
           <label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:.3rem">Reason</label>
           <input id="bulk-reason" class="form-control" type="text" placeholder="e.g. Restock, Damage, Inventory correction" value="">
@@ -940,7 +928,11 @@ function renderBulkStock() {
 
         <button class="btn btn-primary btn-lg w-full" onclick="applyBulkStock()">Apply to ${bulkChecked.length} Product${bulkChecked.length!==1?'s':''}</button>
       </div>
-      `}
+      ` : bulkOperation && bulkChecked.length === 0 ? `
+      <div class="card" style="text-align:center;padding:1.5rem;color:var(--text-muted)">
+        Please select at least one product
+      </div>
+      ` : ''}
     </div>
   `);
 }
@@ -2068,16 +2060,19 @@ function renderMobileBulkStock() {
         </div>
       </div>
 
-      ${bulkChecked.length === 0 ? '' : `
-      <div class="card">
-        <div style="margin-bottom:1rem">
-          <label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:.3rem">Operation</label>
-          <select id="bulk-operation" class="form-control" value="${bulkOperation}" onchange="bulkOperation = this.value; renderMobileBulkStock()">
+      <div class="card" style="margin-bottom:1rem;padding:1rem">
+        <div style="margin-bottom:0">
+          <label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:.5rem">Select Operation</label>
+          <select id="bulk-operation" class="form-control" value="${bulkOperation}" onchange="bulkOperation = this.value; renderMobileBulkStock()" style="font-size:1rem">
+            <option value="">-- Choose Operation --</option>
             <option value="in">📥 Stock In (Add)</option>
             <option value="out">📤 Stock Out (Remove)</option>
           </select>
         </div>
+      </div>
 
+      ${bulkOperation && bulkChecked.length > 0 ? `
+      <div class="card">
         <div style="margin-bottom:1rem">
           <div style="font-weight:600;font-size:.9rem;margin-bottom:.75rem">Quantities ${bulkOperation === 'in' ? '& Cost Prices' : ''}</div>
           ${Products.all().filter(p => bulkChecked.includes(p.sku)).map(p => `
@@ -2109,7 +2104,11 @@ function renderMobileBulkStock() {
 
         <button class="btn btn-primary btn-lg w-full" onclick="applyBulkStock()">Apply to ${bulkChecked.length} Product${bulkChecked.length!==1?'s':''}</button>
       </div>
-      `}
+      ` : bulkOperation && bulkChecked.length === 0 ? `
+      <div class="card" style="text-align:center;padding:1rem;color:var(--text-muted)">
+        Please select at least one product
+      </div>
+      ` : ''}
     </div>
   `);
 }
