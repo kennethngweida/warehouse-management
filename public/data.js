@@ -15,14 +15,14 @@ let movementsCache = [];
 
 // ── Seed data ────────────────────────────────────────────────
 const SEED_PRODUCTS = [
-  { sku: 'BEV-001', name: 'Orange Juice', category: 'Beverages', price: 3.99, stock: 150 },
-  { sku: 'BEV-002', name: 'Lemonade', category: 'Beverages', price: 2.99, stock: 120 },
-  { sku: 'BEV-003', name: 'Iced Tea', category: 'Beverages', price: 2.49, stock: 200 },
-  { sku: 'BEV-004', name: 'Coconut Water', category: 'Beverages', price: 4.99, stock: 80 },
-  { sku: 'BEER-001', name: 'IPA Craft Beer', category: 'Beers', price: 5.99, stock: 75 },
-  { sku: 'BEER-002', name: 'Lager Premium', category: 'Beers', price: 4.99, stock: 120 },
-  { sku: 'BEER-003', name: 'Stout Dark', category: 'Beers', price: 6.99, stock: 45 },
-  { sku: 'BEER-004', name: 'Pilsner Gold', category: 'Beers', price: 5.49, stock: 200 },
+  { sku: 'BEV-001', name: 'Orange Juice', category: 'Beverages', cost_price: 3.99, stock: 150 },
+  { sku: 'BEV-002', name: 'Lemonade', category: 'Beverages', cost_price: 2.99, stock: 120 },
+  { sku: 'BEV-003', name: 'Iced Tea', category: 'Beverages', cost_price: 2.49, stock: 200 },
+  { sku: 'BEV-004', name: 'Coconut Water', category: 'Beverages', cost_price: 4.99, stock: 80 },
+  { sku: 'BEER-001', name: 'IPA Craft Beer', category: 'Beers', cost_price: 5.99, stock: 75 },
+  { sku: 'BEER-002', name: 'Lager Premium', category: 'Beers', cost_price: 4.99, stock: 120 },
+  { sku: 'BEER-003', name: 'Stout Dark', category: 'Beers', cost_price: 6.99, stock: 45 },
+  { sku: 'BEER-004', name: 'Pilsner Gold', category: 'Beers', cost_price: 5.49, stock: 200 },
 ];
 
 const SEED_USERS = [
@@ -151,7 +151,7 @@ const Products = {
   find: (sku) => productsCache.find(p => p.sku === sku),
 
   create: async (data) => {
-    const prod = { ...data, stock: Number(data.stock), price: Number(data.price), min_stock: 10 };
+    const prod = { ...data, stock: Number(data.stock), cost_price: Number(data.cost_price), min_stock: 10 };
     const res = await fetch('/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(prod) });
     if (!res.ok) throw new Error(await res.text());
     const created = await res.json();
@@ -182,7 +182,7 @@ const Products = {
     const newStock = Math.max(0, p.stock + qty);
     const updateData = { ...p, stock: newStock };
     if (costPrice !== null && costPrice !== '') {
-      updateData.cost_price = Number(costPrice);
+      updateData.cost_cost_price = Number(costPrice);
     }
     const res = await fetch(`/api/products/${sku}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updateData) });
     if (!res.ok) throw new Error(await res.text());
@@ -218,7 +218,7 @@ const Orders = {
   find: (id) => ordersCache.find(o => o.id === id),
 
   create: async (customerId, customerName, items) => {
-    const total = items.reduce((s, i) => s + i.price * i.qty, 0);
+    const total = items.reduce((s, i) => s + i.cost_price * i.qty, 0);
     const order = {
       id: 'ORD-' + Date.now(),
       customer_id: customerId,

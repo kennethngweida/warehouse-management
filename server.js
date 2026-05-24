@@ -50,14 +50,14 @@ app.get('/api/products/:sku', async (req, res) => {
 // POST create product
 app.post('/api/products', async (req, res) => {
   try {
-    const { sku, name, category, price, stock, min_stock } = req.body;
+    const { sku, name, category, cost_price, stock, min_stock } = req.body;
     const { data, error } = await supabase
       .from('products')
       .insert([{
         sku,
         name,
         category,
-        price: parseFloat(price),
+        cost_price: parseFloat(cost_price),
         stock: parseInt(stock),
         min_stock: parseInt(min_stock) || 10
       }])
@@ -73,17 +73,14 @@ app.post('/api/products', async (req, res) => {
 // PUT update product
 app.put('/api/products/:sku', async (req, res) => {
   try {
-    const { name, category, price, stock, min_stock, cost_price } = req.body;
+    const { name, category, cost_price, stock, min_stock } = req.body;
     const updateObj = {
       name,
       category,
-      price: parseFloat(price),
+      cost_price: parseFloat(cost_price),
       stock: parseInt(stock),
       min_stock: parseInt(min_stock) || 10
     };
-    if (cost_price !== null && cost_price !== undefined && cost_price !== '') {
-      updateObj.cost_price = parseFloat(cost_price);
-    }
     const { data, error } = await supabase
       .from('products')
       .update(updateObj)

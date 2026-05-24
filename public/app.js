@@ -652,7 +652,7 @@ function renderInventory() {
       <div class="card" style="padding:0">
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Product</th><th>SKU</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead>
+            <thead><tr><th>Product</th><th>SKU</th><th>Category</th><th>Cost Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody>
               ${prods.length === 0
                 ? `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">🔍</div><p>No products match your search.</p></div></td></tr>`
@@ -666,7 +666,7 @@ function renderInventory() {
                     </td>
                     <td><code style="font-size:.75rem;background:var(--border-light);padding:.15rem .4rem;border-radius:4px;color:var(--text-muted)">${p.sku}</code></td>
                     <td><span style="font-size:.8rem;color:var(--text-muted)">${p.category}</span></td>
-                    <td style="font-weight:700;color:var(--primary)">${fmt(p.price)}</td>
+                    <td style="font-weight:700;color:var(--primary)">${fmt(p.cost_price)}</td>
                     <td>
                       <div style="display:flex;align-items:center;gap:.5rem">
                         <button class="btn btn-ghost btn-sm" style="padding:.25rem .4rem;font-size:1rem" onclick="quickAdjust('${p.sku}', -1)" title="Remove 1 unit">−</button>
@@ -717,7 +717,7 @@ function productForm(p = {}) {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
       <div class="form-group">
         <label>Cost Price ($) *</label>
-        <input class="form-control" id="pf-price" type="number" step="0.01" min="0" value="${p.price||''}" placeholder="0.00">
+        <input class="form-control" id="pf-price" type="number" step="0.01" min="0" value="${p.cost_price||''}" placeholder="0.00">
       </div>
       <div class="form-group">
         <label>Stock Qty *</label>
@@ -751,19 +751,19 @@ function openEditProduct(sku) {
 }
 
 async function saveProduct(sku) {
-  const name    = el('pf-name').value.trim();
-  const newSku  = el('pf-sku').value.trim();
-  const category= el('pf-cat').value;
-  const price   = parseFloat(el('pf-price').value);
-  const stock   = parseInt(el('pf-stock').value);
+  const name      = el('pf-name').value.trim();
+  const newSku    = el('pf-sku').value.trim();
+  const category  = el('pf-cat').value;
+  const cost_price= parseFloat(el('pf-price').value);
+  const stock     = parseInt(el('pf-stock').value);
 
-  if (!name||!newSku||!category||isNaN(price)||isNaN(stock)) {
+  if (!name||!newSku||!category||isNaN(cost_price)||isNaN(stock)) {
     set('prod-error','<div class="alert alert-error">⚠️ Please fill in all required fields.</div>'); return;
   }
 
   try {
     const data = {
-      name, sku: newSku, category, price, stock,
+      name, sku: newSku, category, cost_price, stock,
       description: '',
       min_stock: 10,
       unit: 'units',
@@ -1174,7 +1174,7 @@ function openCreateOrder() {
             <div style="display:flex;align-items:center;justify-content:space-between;padding:.5rem;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border-light)">
               <div style="flex:1">
                 <div style="font-weight:600;font-size:.85rem">${p.name}</div>
-                <div style="font-size:.75rem;color:var(--text-muted)">${fmt(p.price)} · Stock: ${p.stock}</div>
+                <div style="font-size:.75rem;color:var(--text-muted)">${fmt(p.cost_price)} · Stock: ${p.stock}</div>
               </div>
               <div style="display:flex;align-items:center;gap:.3rem">
                 <input type="number" min="0" max="${p.stock}" value="0" class="form-control" style="width:60px;padding:.25rem .35rem;font-size:.8rem" id="qty-${p.sku}">
@@ -1216,7 +1216,7 @@ function addProductToAdminOrder(sku) {
     if (newQty > p.stock) { toast(`Total quantity cannot exceed ${p.stock} in stock`, 'error'); return; }
     existing.qty = newQty;
   } else {
-    adminOrderCart.push({ sku, name: p.name, price: p.price, qty, emoji: categoryEmoji(p.category) });
+    adminOrderCart.push({ sku, name: p.name, price: p.cost_price, qty, emoji: categoryEmoji(p.category) });
   }
 
   el('qty-' + sku).value = '0';
@@ -1361,7 +1361,7 @@ function renderCustDashboard() {
                 <div style="font-size:1.4rem;width:36px;height:36px;background:linear-gradient(135deg,#f5f5f5,#eeeeee);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0">${p.emoji||categoryEmoji(p.category)}</div>
                 <div style="flex:1;min-width:0">
                   <div style="font-weight:600;font-size:.85rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</div>
-                  <div style="font-size:.75rem;color:var(--primary);font-weight:700">${fmt(p.price)}</div>
+                  <div style="font-size:.75rem;color:var(--primary);font-weight:700">${fmt(p.cost_price)}</div>
                 </div>
                 <button class="btn btn-accent btn-sm" onclick="addToCart('${p.sku}')" ${p.stock===0?'disabled':''}>
                   ${p.stock===0?'Out':'Add'}
@@ -1416,7 +1416,7 @@ function renderCatalog() {
                   <div class="product-name">${p.name}</div>
                   <div class="product-sku">SKU: ${p.sku}</div>
                   <div class="product-stock">${stockBadge(p)} · ${p.stock} in stock</div>
-                  <div class="product-price">${fmt(p.price)}<span style="font-size:.72rem;font-weight:400;color:var(--text-muted)"></span></div>
+                  <div class="product-price">${fmt(p.cost_price)}<span style="font-size:.72rem;font-weight:400;color:var(--text-muted)"></span></div>
                   <button class="btn btn-accent w-full" onclick="addToCart('${p.sku}')" ${p.stock===0?'disabled':''}>
                     ${p.stock===0 ? 'Out of Stock' : '🛒 Add to Cart'}
                   </button>
@@ -1436,7 +1436,7 @@ function addToCart(sku) {
     if (existing.qty + 1 > p.stock) { toast(`Only ${p.stock} in stock available.`,'warning'); return; }
     existing.qty++;
   } else {
-    cart.push({ sku, name: p.name, price: p.price, qty: 1, emoji: p.emoji||categoryEmoji(p.category), unit: p.unit });
+    cart.push({ sku, name: p.name, price: p.cost_price, qty: 1, emoji: p.emoji||categoryEmoji(p.category), unit: p.unit });
   }
   toast(`${p.name} added to cart!`, 'success');
   renderCustomerNav();
@@ -2334,7 +2334,7 @@ function renderMobileCatalog() {
                 <div style="font-size:.75rem;color:var(--text-muted)">${p.stock > 0 ? p.stock + ' in stock' : 'Out of stock'}</div>
               </div>
               <div style="display:flex;justify-content:space-between;align-items:center">
-                <div style="font-weight:700;color:var(--primary);font-size:1.1rem">${fmt(p.price)}</div>
+                <div style="font-weight:700;color:var(--primary);font-size:1.1rem">${fmt(p.cost_price)}</div>
                 <button class="btn btn-sm btn-primary" onclick="addToCartMobile('${p.sku}')" ${p.stock===0?'disabled':''}>+</button>
               </div>
             </div>
