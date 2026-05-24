@@ -668,8 +668,14 @@ function renderInventory() {
                     <td><span style="font-size:.8rem;color:var(--text-muted)">${p.category}</span></td>
                     <td style="font-weight:700;color:var(--primary)">${fmt(p.price)}</td>
                     <td>
-                      <div style="font-weight:700;font-size:.95rem">${p.stock}</div>
-                      <div style="font-size:.7rem;color:var(--text-light)">min ${p.min_stock || 10}</div>
+                      <div style="display:flex;align-items:center;gap:.5rem">
+                        <button class="btn btn-ghost btn-sm" style="padding:.25rem .4rem;font-size:1rem" onclick="quickAdjust('${p.sku}', -1)" title="Remove 1 unit">−</button>
+                        <div style="min-width:60px">
+                          <div style="font-weight:700;font-size:.95rem">${p.stock}</div>
+                          <div style="font-size:.7rem;color:var(--text-light)">min ${p.min_stock || 10}</div>
+                        </div>
+                        <button class="btn btn-ghost btn-sm" style="padding:.25rem .4rem;font-size:1rem" onclick="quickAdjust('${p.sku}', 1)" title="Add 1 unit">+</button>
+                      </div>
                     </td>
                     <td>${stockBadge(p)}</td>
                     <td>
@@ -834,6 +840,19 @@ async function confirmAdjust(sku) {
   }
 }
 
+async function quickAdjust(sku, qty) {
+  try {
+    const p = Products.find(sku);
+    if (!p) return;
+    const reason = qty > 0 ? 'Quick add' : 'Quick remove';
+    const updated = await Products.adjustStock(sku, qty, reason);
+    toast(`${p.name}: ${updated.stock} units`, 'success');
+    renderInventory();
+  } catch (err) {
+    toast(`Error: ${err.message}`, 'error');
+  }
+}
+
 // ── Bulk Stock Management ─────────────────────────────────────
 let bulkChecked = [];
 let bulkQuantities = {};
@@ -913,8 +932,8 @@ function renderBulkStock() {
               </div>
               ${bulkOperation === 'in' ? `
               <div style="display:flex;flex-direction:column;gap:.3rem;align-items:center">
-                <label style="font-size:.7rem;font-weight:600;color:var(--text-muted)">Cost</label>
-                <input type="number" id="bulk-cost-${p.sku}" class="form-control" style="width:90px;padding:0.5rem;text-align:center" min="0" step="0.01" value="${p.cost_price && p.cost_price !== 0 ? parseFloat(p.cost_price) : ''}" placeholder="0.00">
+                <label style="font-size:.7rem;font-weight:600;color:var(--text-muted)">Cost ${p.cost_price ? `($${p.cost_price})` : ''}</label>
+                <input type="number" id="bulk-cost-${p.sku}" class="form-control" style="width:90px;padding:0.5rem;text-align:center;font-weight:600;font-size:1rem" min="0" step="0.01" value="${p.cost_price || ''}" placeholder="Enter price">
               </div>
               ` : ''}
             </div>
@@ -983,14 +1002,14 @@ async function applyBulkStock() {
     }
 
     const qty = parseInt(qtyInput.value);
-    if (isNaN(qty) || qty <= 0) {
+    if (isNaN(qty) || qty === 0) {
       validationErrors.push(sku);
       errors++;
       continue;
     }
 
     try {
-      const adjustQty = operation === 'in' ? qty : -qty;
+      const adjustQty = operation === 'in' ? (qty > 0 ? qty : qty) : (qty > 0 ? -qty : qty);
       let costPrice = null;
 
       if (operation === 'in') {

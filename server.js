@@ -73,16 +73,20 @@ app.post('/api/products', async (req, res) => {
 // PUT update product
 app.put('/api/products/:sku', async (req, res) => {
   try {
-    const { name, category, price, stock, min_stock } = req.body;
+    const { name, category, price, stock, min_stock, cost_price } = req.body;
+    const updateObj = {
+      name,
+      category,
+      price: parseFloat(price),
+      stock: parseInt(stock),
+      min_stock: parseInt(min_stock) || 10
+    };
+    if (cost_price !== null && cost_price !== undefined && cost_price !== '') {
+      updateObj.cost_price = parseFloat(cost_price);
+    }
     const { data, error } = await supabase
       .from('products')
-      .update({
-        name,
-        category,
-        price: parseFloat(price),
-        stock: parseInt(stock),
-        min_stock: parseInt(min_stock) || 10
-      })
+      .update(updateObj)
       .eq('sku', req.params.sku)
       .select()
       .single();
