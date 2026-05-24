@@ -776,7 +776,10 @@ async function saveProduct(sku) {
       const formData = new FormData();
       formData.append('image', imageFile);
       const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
-      if (!uploadRes.ok) throw new Error('Image upload failed');
+      if (!uploadRes.ok) {
+        const errText = await uploadRes.text();
+        throw new Error(`Upload failed: ${errText}`);
+      }
       const uploadData = await uploadRes.json();
       image_url = uploadData.url;
     }

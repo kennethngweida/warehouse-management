@@ -134,15 +134,33 @@ app.delete('/api/products/:sku', async (req, res) => {
   }
 });
 
-// POST upload product image
-app.post('/api/upload', upload.single('image'), (req, res) => {
+// POST upload product image to Supabase Storage
+app.post('/api/upload', upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
-    const imageUrl = `/uploads/${req.file.filename}`;
-    res.json({ url: imageUrl, filename: req.file.filename });
+
+    const timestamp = Date.now();
+    const ext = path.extname(req.file.originalname);
+    const filename = `product-${timestamp}${ext}`;
+
+    const { data, error } = await supabase.storage
+      .from('product-images')
+      .upload(filename, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert: false
+      });
+
+    if (error) throw error;
+
+    const { data: urlData } = supabase.storage
+      .from('product-images')
+      .getPublicUrl(filename);
+
+    res.json({ url: urlData.publicUrl, filename: filename });
   } catch (err) {
+    console.error('Upload error:', err);
     res.status(400).json({ error: err.message });
   }
 });
