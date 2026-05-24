@@ -145,6 +145,8 @@ app.post('/api/upload', upload.single('image'), async (req, res) => {
     const ext = path.extname(req.file.originalname);
     const filename = `product-${timestamp}${ext}`;
 
+    console.log('Uploading to Supabase:', filename);
+
     const { data, error } = await supabase.storage
       .from('product-images')
       .upload(filename, req.file.buffer, {
@@ -152,16 +154,22 @@ app.post('/api/upload', upload.single('image'), async (req, res) => {
         upsert: false
       });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase upload error:', error);
+      throw error;
+    }
 
-    const { data: urlData } = supabase.storage
+    const publicUrlObject = supabase.storage
       .from('product-images')
       .getPublicUrl(filename);
 
-    res.json({ url: urlData.publicUrl, filename: filename });
+    const publicUrl = publicUrlObject.data.publicUrl;
+    console.log('File uploaded successfully:', publicUrl);
+
+    res.json({ url: publicUrl, filename: filename });
   } catch (err) {
-    console.error('Upload error:', err);
-    res.status(400).json({ error: err.message });
+    console.error('Upload error:', err.message);
+    res.status(500).json({ error: err.message || 'Upload failed' });
   }
 });
 
