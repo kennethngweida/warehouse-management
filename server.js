@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
+const multer = require('multer');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
@@ -11,6 +12,27 @@ const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY
 );
+
+// ── File Upload Configuration ────────────────────────────
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, 'public/uploads'));
+  },
+  filename: (req, file, cb) => {
+    const timestamp = Date.now();
+    const ext = path.extname(file.originalname);
+    cb(null, `product-${timestamp}${ext}`);
+  }
+});
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = /\.(jpg|jpeg|png|gif|webp)$/i;
+    if (allowed.test(file.originalname)) cb(null, true);
+    else cb(new Error('Invalid file type. Only images allowed.'));
+  }
+});
 
 // ── Middleware ───────────────────────────────────────────
 app.use(express.json());
@@ -50,7 +72,7 @@ app.get('/api/products/:sku', async (req, res) => {
 // POST create product
 app.post('/api/products', async (req, res) => {
   try {
-    const { sku, name, category, cost_price, stock, min_stock } = req.body;
+    const { sku, name, category, cost_price, stock, min_stock, image_url } = req.body;
     const { data, error } = await supabase
       .from('products')
       .insert([{
@@ -59,7 +81,8 @@ app.post('/api/products', async (req, res) => {
         category,
         cost_price: parseFloat(cost_price),
         stock: parseInt(stock),
-        min_stock: parseInt(min_stock) || 10
+        min_stock: parseInt(min_stock) || 10,
+        image_url: image_url || null
       }])
       .select()
       .single();
@@ -73,7 +96,7 @@ app.post('/api/products', async (req, res) => {
 // PUT update product
 app.put('/api/products/:sku', async (req, res) => {
   try {
-    const { name, category, cost_price, stock, min_stock } = req.body;
+    const { name, category, cost_price, stock, min_stock, image_url } = req.body;
     const updateObj = {
       name,
       category,
@@ -81,6 +104,9 @@ app.put('/api/products/:sku', async (req, res) => {
       stock: parseInt(stock),
       min_stock: parseInt(min_stock) || 10
     };
+    if (image_url !== undefined) {
+      updateObj.image_url = image_url;
+    }
     const { data, error } = await supabase
       .from('products')
       .update(updateObj)
@@ -103,6 +129,19 @@ app.delete('/api/products/:sku', async (req, res) => {
       .eq('sku', req.params.sku);
     if (error) throw error;
     res.json({ success: true });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// POST upload product image
+app.post('/api/upload', upload.single('image'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+    const imageUrl = `/uploads/${req.file.filename}`;
+    res.json({ url: imageUrl, filename: req.file.filename });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

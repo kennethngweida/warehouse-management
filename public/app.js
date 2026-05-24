@@ -660,7 +660,9 @@ function renderInventory() {
                   <tr>
                     <td>
                       <div style="display:flex;align-items:center;gap:.65rem">
-                        <div style="font-size:1.5rem;width:36px;height:36px;background:linear-gradient(135deg,#f5f5f5,#eeeeee);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0">${p.emoji||categoryEmoji(p.category)}</div>
+                        <div style="width:36px;height:36px;background:linear-gradient(135deg,#f5f5f5,#eeeeee);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden">
+                          ${p.image_url ? `<img src="${p.image_url}" style="width:100%;height:100%;object-fit:cover">` : `<span style="font-size:1.5rem">${p.emoji||categoryEmoji(p.category)}</span>`}
+                        </div>
                         <div style="font-weight:600;font-size:.875rem">${p.name}</div>
                       </div>
                     </td>
@@ -724,6 +726,12 @@ function productForm(p = {}) {
         <input class="form-control" id="pf-stock" type="number" min="0" value="${p.stock||''}" placeholder="0">
       </div>
     </div>
+    <div class="form-group">
+      <label>Product Image</label>
+      <input class="form-control" id="pf-image" type="file" accept="image/*">
+      ${p.image_url ? `<div style="margin-top:.5rem"><img src="${p.image_url}" style="max-width:100px;max-height:100px;border-radius:4px"></div>` : ''}
+      <input type="hidden" id="pf-image-url" value="${p.image_url||''}">
+    </div>
   `;
 }
 
@@ -756,14 +764,25 @@ async function saveProduct(sku) {
   const category  = el('pf-cat').value;
   const cost_price= parseFloat(el('pf-price').value);
   const stock     = parseInt(el('pf-stock').value);
+  const imageFile = el('pf-image').files[0];
+  let image_url   = el('pf-image-url').value;
 
   if (!name||!newSku||!category||isNaN(cost_price)||isNaN(stock)) {
     set('prod-error','<div class="alert alert-error">⚠️ Please fill in all required fields.</div>'); return;
   }
 
   try {
+    if (imageFile) {
+      const formData = new FormData();
+      formData.append('image', imageFile);
+      const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
+      if (!uploadRes.ok) throw new Error('Image upload failed');
+      const uploadData = await uploadRes.json();
+      image_url = uploadData.url;
+    }
+
     const data = {
-      name, sku: newSku, category, cost_price, stock,
+      name, sku: newSku, category, cost_price, stock, image_url,
       description: '',
       min_stock: 10,
       unit: 'units',
@@ -1411,7 +1430,9 @@ function renderCatalog() {
         : `<div class="products-grid">
             ${prods.map(p=>`
               <div class="product-card">
-                <div class="product-img">${p.emoji||categoryEmoji(p.category)}</div>
+                <div class="product-img" style="display:flex;align-items:center;justify-content:center;overflow:hidden">
+                  ${p.image_url ? `<img src="${p.image_url}" style="width:100%;height:100%;object-fit:cover">` : `<span>${p.emoji||categoryEmoji(p.category)}</span>`}
+                </div>
                 <div class="product-body">
                   <div class="product-name">${p.name}</div>
                   <div class="product-sku">SKU: ${p.sku}</div>
