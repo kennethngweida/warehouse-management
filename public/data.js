@@ -210,7 +210,7 @@ const Products = {
     const newStock = Math.max(0, p.stock + qty);
     const updateData = { ...p, stock: newStock };
     if (costPrice !== null && costPrice !== '') {
-      updateData.cost_cost_price = Number(costPrice);
+      updateData.cost_price = Number(costPrice);
     }
     const res = await fetch(`/api/products/${sku}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updateData) });
     if (!res.ok) throw new Error(await res.text());
