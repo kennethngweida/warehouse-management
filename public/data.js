@@ -273,7 +273,7 @@ const Products = {
     return updated;
   },
 
-  lowStock: () => productsCache.filter(p => p.stock <= 10),
+  lowStock: () => productsCache.filter(p => p.stock <= (p.min_stock || 10)),
 };
 
 // ── Stock Movement API ────────────────────────────────────────
@@ -375,7 +375,7 @@ function statusBadge(s) {
 function initials(name) { return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase(); }
 function stockBadge(p) {
   if (p.stock === 0) return `<span class="badge badge-danger">Out of Stock</span>`;
-  if (p.stock <= p.minStock) return `<span class="badge badge-warning">Low Stock</span>`;
+  if (p.stock <= (p.min_stock || p.minStock || 10)) return `<span class="badge badge-warning">Low Stock</span>`;
   return `<span class="badge badge-success">In Stock</span>`;
 }
 function categoryEmoji(cat) {

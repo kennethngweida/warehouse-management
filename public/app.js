@@ -2666,7 +2666,7 @@ function addToCartMobile(sku) {
     if (existing.qty < p.stock) existing.qty++;
     else { toast('Cannot exceed available stock', 'warning'); return; }
   } else {
-    if (p.stock > 0) cart.push({ ...p, qty: 1 });
+    if (p.stock > 0) cart.push({ ...p, price: p.cost_price, qty: 1 });
     else { toast('Out of stock', 'error'); return; }
   }
   toast(`Added ${p.name} to cart`, 'success');
