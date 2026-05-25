@@ -977,9 +977,11 @@ function toggleBulkSelect(sku) {
   if (bulkChecked.includes(sku)) {
     bulkChecked = bulkChecked.filter(s => s !== sku);
     delete bulkQuantities[sku];
+    toast('Deselected', 'info');
   } else {
     bulkChecked.push(sku);
     bulkQuantities[sku] = 10;
+    toast('Selected ✓', 'success');
   }
   renderBulkStock();
 }
