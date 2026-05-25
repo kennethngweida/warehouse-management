@@ -910,17 +910,14 @@ function renderBulkStock() {
             );
             return filtered.length === 0
             ? '<div style="text-align:center;color:var(--text-muted);padding:1rem">No products found</div>'
-            : filtered.map(p => {
-              const isSelected = bulkChecked.includes(p.sku);
-              return `
-              <div style="display:flex;align-items:center;padding:.5rem;border-bottom:1px solid var(--border-light);background:${isSelected ? 'var(--primary-light)' : 'transparent'};border-left:3px solid ${isSelected ? 'var(--primary)' : 'transparent'};padding-left:calc(.5rem - 3px)">
-                <input type="checkbox" id="bulk-${p.sku}" ${isSelected ? 'checked' : ''} onchange="toggleBulkSelect('${p.sku}')" style="margin-right:.75rem;cursor:pointer;width:18px;height:18px;accent-color:var(--primary)">
+            : filtered.map(p => `
+              <div style="display:flex;align-items:center;padding:.5rem;border-bottom:1px solid var(--border-light)">
+                <input type="checkbox" id="bulk-${p.sku}" ${bulkChecked.includes(p.sku) ? 'checked' : ''} onchange="toggleBulkSelect('${p.sku}')" style="margin-right:.75rem;cursor:pointer;width:18px;height:18px">
                 <label for="bulk-${p.sku}" style="flex:1;cursor:pointer">
-                  <div style="font-weight:${isSelected ? '600' : '500'};color:${isSelected ? 'var(--primary)' : 'inherit'}">${p.name}</div>
+                  <div style="font-weight:500">${p.name}</div>
                   <div style="font-size:.75rem;color:var(--text-muted)">${p.sku} • ${p.stock} units</div>
                 </label>
-              </div>`;
-            }).join('');
+              </div>`).join('');
           })()}
         </div>
       </div>
