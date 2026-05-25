@@ -298,7 +298,7 @@ const Orders = {
   find: (id) => ordersCache.find(o => o.id === id),
 
   create: async (customerId, customerName, items) => {
-    const total = items.reduce((s, i) => s + i.cost_price * i.qty, 0);
+    const total = items.reduce((s, i) => s + (i.price || i.cost_price || 0) * i.qty, 0);
     const order = {
       id: 'ORD-' + Date.now(),
       customer_id: customerId,
