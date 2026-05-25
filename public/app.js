@@ -1197,10 +1197,21 @@ function viewOrder(id) {
 }
 
 let adminOrderCart = [];
+let createOrderCategory = '';
+let createOrderSupplier = '';
 
 function renderCreateOrder() {
   const customers = Users.all();
-  const products = Products.all();
+  const allProducts = Products.all();
+  const categories = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
+  const suppliers = [...new Set(allProducts.map(p => p.supplier).filter(Boolean))];
+
+  const filteredProducts = allProducts.filter(p => {
+    if (createOrderCategory && p.category !== createOrderCategory) return false;
+    if (createOrderSupplier && p.supplier !== createOrderSupplier) return false;
+    return true;
+  });
+
   set('admin-content', `
     <div class="page">
       <div class="page-header">
@@ -1208,7 +1219,7 @@ function renderCreateOrder() {
           <div class="page-title">Create Order</div>
           <div class="page-sub">Create a new order for a customer</div>
         </div>
-        <button class="btn btn-ghost" onclick="adminOrderCart=[];currentView='admin-orders';route()">← Back to Orders</button>
+        <button class="btn btn-ghost" onclick="adminOrderCart=[];createOrderCategory='';createOrderSupplier='';currentView='admin-orders';route()">← Back to Orders</button>
       </div>
 
       <div id="order-error"></div>
@@ -1224,31 +1235,62 @@ function renderCreateOrder() {
       </div>
 
       <div class="card" style="margin-bottom:1.5rem;padding:1.5rem">
-        <div style="font-weight:700;margin-bottom:.75rem">Add Products</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;flex-wrap:wrap;gap:.5rem">
+          <div style="font-weight:700">Add Products</div>
+          <div style="font-size:.85rem;color:var(--text-muted)">${filteredProducts.length} of ${allProducts.length} products</div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:.75rem;margin-bottom:1rem">
+          <div>
+            <label style="font-size:.75rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.25rem">Filter by Category</label>
+            <select class="form-control" onchange="createOrderCategory=this.value;renderCreateOrder()">
+              <option value="">All Categories</option>
+              ${categories.map(c => `<option value="${c}" ${createOrderCategory===c?'selected':''}>${c}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label style="font-size:.75rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.25rem">Filter by Supplier</label>
+            <select class="form-control" onchange="createOrderSupplier=this.value;renderCreateOrder()">
+              <option value="">All Suppliers</option>
+              ${suppliers.map(s => `<option value="${s}" ${createOrderSupplier===s?'selected':''}>${s}</option>`).join('')}
+            </select>
+          </div>
+          <div style="display:flex;align-items:flex-end">
+            ${(createOrderCategory || createOrderSupplier) ? `<button class="btn btn-ghost btn-sm" onclick="createOrderCategory='';createOrderSupplier='';renderCreateOrder()">✕ Clear</button>` : ''}
+          </div>
+        </div>
+
         <div class="table-wrap" style="border:1px solid var(--border-light);border-radius:var(--radius-sm)">
           <table>
             <thead>
               <tr>
                 <th>Product</th>
+                <th style="text-align:center;width:100px">Supplier</th>
                 <th style="text-align:center;width:80px">Stock</th>
                 <th style="text-align:center;width:90px">Price</th>
                 <th style="text-align:center;width:160px">Add</th>
               </tr>
             </thead>
             <tbody>
-              ${products.map(p=>`
-                <tr>
-                  <td style="font-weight:600;font-size:.85rem">${p.name}</td>
-                  <td style="text-align:center;font-size:.85rem">${p.stock}</td>
-                  <td style="text-align:center;font-size:.85rem">${fmt(p.cost_price)}</td>
-                  <td>
-                    <div style="display:flex;align-items:center;gap:.3rem;justify-content:center">
-                      <input type="number" min="0" max="${p.stock}" value="0" class="form-control" style="width:60px;padding:.25rem .35rem;font-size:.8rem;text-align:center" id="qty-${p.sku}">
-                      <button class="btn btn-primary btn-sm" onclick="addProductToAdminOrder('${p.sku}')">Add</button>
-                    </div>
-                  </td>
-                </tr>
-              `).join('')}
+              ${filteredProducts.length === 0
+                ? `<tr><td colspan="5"><div style="text-align:center;padding:1.5rem;color:var(--text-muted)">No products match the selected filters</div></td></tr>`
+                : filteredProducts.map(p=>`
+                  <tr>
+                    <td>
+                      <div style="font-weight:600;font-size:.85rem">${p.name}</div>
+                      <div style="font-size:.7rem;color:var(--text-muted)">${p.category || '—'}</div>
+                    </td>
+                    <td style="text-align:center;font-size:.8rem;color:var(--text-muted)">${p.supplier || '—'}</td>
+                    <td style="text-align:center;font-size:.85rem">${p.stock}</td>
+                    <td style="text-align:center;font-size:.85rem">${fmt(p.cost_price)}</td>
+                    <td>
+                      <div style="display:flex;align-items:center;gap:.3rem;justify-content:center">
+                        <input type="number" min="0" max="${p.stock}" value="0" class="form-control" style="width:60px;padding:.25rem .35rem;font-size:.8rem;text-align:center" id="qty-${p.sku}">
+                        <button class="btn btn-primary btn-sm" onclick="addProductToAdminOrder('${p.sku}')">Add</button>
+                      </div>
+                    </td>
+                  </tr>
+                `).join('')}
             </tbody>
           </table>
         </div>
