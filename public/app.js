@@ -883,10 +883,12 @@ function renderBulkStock() {
 
   setTimeout(() => {
     bulkChecked.forEach(sku => {
-      const checkbox = el(`bulk-${sku}`);
-      if (checkbox) checkbox.checked = true;
+      const checkbox = document.getElementById(`bulk-${sku}`);
+      if (checkbox) {
+        checkbox.checked = true;
+      }
     });
-  }, 0);
+  }, 50);
 
   set('admin-content', `
     <div class="page">
