@@ -7,6 +7,34 @@ const DB = {
   set: (key, val) => { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} },
 };
 
+// ── Supabase Client (Client-side) ────────────────────────────
+const supabaseUrl = 'https://ejslflftjtirkgnxxirb.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqc2xmbGZ0anRpcmtnbnh4aXJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNjUyMTEsImV4cCI6MjA5NDk0MTIxMX0.6OinQqQHY9Iqlvfw3I2BlSvFEqntJm6O7Gx2qu9d0Uk';
+const sbClient = window.supabase ? window.supabase.createClient(supabaseUrl, supabaseAnonKey) : null;
+
+async function uploadProductImage(file) {
+  try {
+    const timestamp = Date.now();
+    const ext = file.name.split('.').pop();
+    const filename = `product-${timestamp}.${ext}`;
+
+    const { data, error } = await sbClient.storage
+      .from('product-images')
+      .upload(filename, file);
+
+    if (error) throw error;
+
+    const { data: urlData } = sbClient.storage
+      .from('product-images')
+      .getPublicUrl(filename);
+
+    return urlData.publicUrl;
+  } catch (err) {
+    console.error('Image upload error:', err);
+    throw new Error('Failed to upload image: ' + err.message);
+  }
+}
+
 // ── In-memory caches ──────────────────────────────────────────
 let productsCache = [];
 let usersCache = [];

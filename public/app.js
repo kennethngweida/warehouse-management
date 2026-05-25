@@ -773,15 +773,10 @@ async function saveProduct(sku) {
 
   try {
     if (imageFile) {
-      const formData = new FormData();
-      formData.append('image', imageFile);
-      const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
-      if (!uploadRes.ok) {
-        const errText = await uploadRes.text();
-        throw new Error(`Upload failed: ${errText}`);
+      if (!sbClient) {
+        throw new Error('Supabase not configured. Please update data.js with your Supabase credentials.');
       }
-      const uploadData = await uploadRes.json();
-      image_url = uploadData.url;
+      image_url = await uploadProductImage(imageFile);
     }
 
     const data = {

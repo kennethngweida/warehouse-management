@@ -136,16 +136,24 @@ app.delete('/api/products/:sku', async (req, res) => {
 
 // POST upload product image to Supabase Storage
 app.post('/api/upload', upload.single('image'), async (req, res) => {
+  const fs = require('fs');
+  const logFile = '/tmp/upload_debug.log';
+
   try {
+    fs.appendFileSync(logFile, `[${new Date().toISOString()}] Upload request received\n`);
+
     if (!req.file) {
+      fs.appendFileSync(logFile, 'No file in request\n');
       return res.status(400).json({ error: 'No file uploaded' });
     }
+
+    fs.appendFileSync(logFile, `File received: ${req.file.originalname}, size: ${req.file.size}\n`);
 
     const timestamp = Date.now();
     const ext = path.extname(req.file.originalname);
     const filename = `product-${timestamp}${ext}`;
 
-    console.log('Uploading to Supabase:', filename);
+    fs.appendFileSync(logFile, `Uploading to Supabase as: ${filename}\n`);
 
     const { data, error } = await supabase.storage
       .from('product-images')
@@ -155,20 +163,22 @@ app.post('/api/upload', upload.single('image'), async (req, res) => {
       });
 
     if (error) {
-      console.error('Supabase upload error:', error);
+      fs.appendFileSync(logFile, `Supabase error: ${JSON.stringify(error)}\n`);
       throw error;
     }
+
+    fs.appendFileSync(logFile, `Upload successful: ${filename}\n`);
 
     const publicUrlObject = supabase.storage
       .from('product-images')
       .getPublicUrl(filename);
 
     const publicUrl = publicUrlObject.data.publicUrl;
-    console.log('File uploaded successfully:', publicUrl);
+    fs.appendFileSync(logFile, `Public URL: ${publicUrl}\n`);
 
     res.json({ url: publicUrl, filename: filename });
   } catch (err) {
-    console.error('Upload error:', err.message);
+    fs.appendFileSync(logFile, `Error: ${err.message}\n`);
     res.status(500).json({ error: err.message || 'Upload failed' });
   }
 });
