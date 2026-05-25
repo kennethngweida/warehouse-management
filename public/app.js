@@ -88,6 +88,7 @@ function routeDesktop() {
       'inventory':       renderInventory,
       'bulk-stock':      renderBulkStock,
       'admin-orders':    renderAdminOrders,
+      'create-order':    renderCreateOrder,
       'stock-history':   renderStockHistory,
       'admin-users':     renderAdminUsers,
       'suppliers':       renderSuppliers,
@@ -481,6 +482,7 @@ function renderSidebar(role) {
         { view: 'inventory',       icon: '📦', label: 'Inventory' },
         { view: 'bulk-stock',      icon: '📥', label: 'Bulk Stock' },
         { view: 'admin-orders',    icon: '🧾', label: 'Orders' },
+        { view: 'create-order',    icon: '➕', label: 'Create Order' },
         { view: 'stock-history',   icon: '📈', label: 'Stock History' },
         { view: 'admin-users',     icon: '👥', label: 'Users' },
         { view: 'suppliers',       icon: '🚚', label: 'Suppliers' },
@@ -1104,7 +1106,7 @@ function renderAdminOrders() {
           <div class="page-title">Orders</div>
           <div class="page-sub">${all.length} total orders</div>
         </div>
-        <button class="btn btn-primary" onclick="openCreateOrder()">+ Create Order</button>
+        <button class="btn btn-primary" onclick="adminOrderCart=[];currentView='create-order';route()">+ Create Order</button>
       </div>
 
       <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1.25rem">
@@ -1196,23 +1198,32 @@ function viewOrder(id) {
 
 let adminOrderCart = [];
 
-function openCreateOrder() {
-  adminOrderCart = [];
+function renderCreateOrder() {
   const customers = Users.all();
   const products = Products.all();
-  showModal(`
-    <div class="modal-header"><div class="modal-title">Create Order</div><button class="modal-close" onclick="closeModal()">×</button></div>
-    <div class="modal-body" style="max-height:600px;overflow-y:auto">
-      <div id="order-error"></div>
-      <div class="form-group">
-        <label>Customer *</label>
-        <select class="form-control" id="order-customer">
-          <option value="">Select a customer</option>
-          ${customers.filter(u=>u.role==='customer').map(u=>`<option value="${u.id}">${u.name} (${u.email})</option>`).join('')}
-        </select>
+  set('admin-content', `
+    <div class="page">
+      <div class="page-header">
+        <div class="page-header-text">
+          <div class="page-title">Create Order</div>
+          <div class="page-sub">Create a new order for a customer</div>
+        </div>
+        <button class="btn btn-ghost" onclick="adminOrderCart=[];currentView='admin-orders';route()">← Back to Orders</button>
       </div>
 
-      <div style="margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border)">
+      <div id="order-error"></div>
+
+      <div class="card" style="margin-bottom:1.5rem;padding:1.5rem">
+        <div class="form-group" style="margin-bottom:0">
+          <label>Customer *</label>
+          <select class="form-control" id="order-customer">
+            <option value="">Select a customer</option>
+            ${customers.filter(u=>u.role==='customer').map(u=>`<option value="${u.id}">${u.name} (${u.email})</option>`).join('')}
+          </select>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:1.5rem;padding:1.5rem">
         <div style="font-weight:700;margin-bottom:.75rem">Add Products</div>
         <div class="table-wrap" style="border:1px solid var(--border-light);border-radius:var(--radius-sm)">
           <table>
@@ -1243,20 +1254,27 @@ function openCreateOrder() {
         </div>
       </div>
 
-      <div style="font-weight:700;margin-bottom:.75rem">Order Summary</div>
-      <div id="admin-order-items" style="display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem">
-        ${adminOrderCart.length === 0 ? '<div style="color:var(--text-muted);font-size:.85rem">No items added yet</div>' : ''}
+      <div class="card" style="padding:1.5rem">
+        <div style="font-weight:700;margin-bottom:.75rem">Order Summary</div>
+        <div id="admin-order-items" style="display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem">
+          ${adminOrderCart.length === 0 ? '<div style="color:var(--text-muted);font-size:.85rem">No items added yet</div>' : ''}
+        </div>
+        <div style="display:flex;justify-content:space-between;font-weight:700;font-size:1.1rem;padding-top:.75rem;border-top:1px solid var(--border);margin-bottom:1rem">
+          <span>Total:</span>
+          <span style="color:var(--primary)" id="admin-order-total">${fmt(adminOrderCart.reduce((s,i)=>s+i.price*i.qty,0))}</span>
+        </div>
+        <div style="display:flex;gap:.5rem;justify-content:flex-end">
+          <button class="btn btn-ghost" onclick="adminOrderCart=[];currentView='admin-orders';route()">Cancel</button>
+          <button class="btn btn-primary btn-lg" onclick="submitAdminOrder()">Place Order</button>
+        </div>
       </div>
-      <div style="display:flex;justify-content:space-between;font-weight:700;font-size:1.1rem;padding-top:.75rem;border-top:1px solid var(--border)">
-        <span>Total:</span>
-        <span style="color:var(--primary)">${fmt(adminOrderCart.reduce((s,i)=>s+i.price*i.qty,0))}</span>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="submitAdminOrder()">Place Order</button>
     </div>
   `);
+
+  // Re-populate cart display if items already exist
+  if (adminOrderCart.length > 0) {
+    setTimeout(() => updateAdminOrderSummary(), 50);
+  }
 }
 
 function addProductToAdminOrder(sku) {
@@ -1298,6 +1316,11 @@ function updateAdminOrderSummary() {
   `).join('');
 
   set('admin-order-items', html || '<div style="color:var(--text-muted);font-size:.85rem">No items added yet</div>');
+
+  const totalEl = el('admin-order-total');
+  if (totalEl) {
+    totalEl.textContent = fmt(adminOrderCart.reduce((s,i)=>s+i.price*i.qty,0));
+  }
 }
 
 function removeAdminOrderItem(sku) {
@@ -1315,8 +1338,8 @@ async function submitAdminOrder() {
     const order = await Orders.create(customerId, customer.name, adminOrderCart);
     adminOrderCart = [];
     toast(`Order ${order.id} created successfully!`, 'success');
-    closeModal();
-    renderAdminOrders();
+    currentView = 'admin-orders';
+    route();
   } catch (err) {
     set('order-error', `<div class="alert alert-error">⚠️ ${err.message}</div>`);
   }
