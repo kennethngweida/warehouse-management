@@ -881,26 +881,6 @@ function renderBulkStock() {
   const products = Products.all();
   const cats = [...new Set(products.map(p => p.category))];
 
-  setTimeout(() => {
-    bulkChecked.forEach(sku => {
-      const checkbox = document.getElementById(`bulk-${sku}`);
-      if (checkbox) {
-        checkbox.checked = true;
-        checkbox.setAttribute('checked', 'checked');
-      }
-    });
-    // Also uncheck items not in bulkChecked
-    products.forEach(p => {
-      if (!bulkChecked.includes(p.sku)) {
-        const checkbox = document.getElementById(`bulk-${p.sku}`);
-        if (checkbox) {
-          checkbox.checked = false;
-          checkbox.removeAttribute('checked');
-        }
-      }
-    });
-  }, 50);
-
   set('admin-content', `
     <div class="page">
       <div class="page-header">
@@ -930,14 +910,19 @@ function renderBulkStock() {
             );
             return filtered.length === 0
             ? '<div style="text-align:center;color:var(--text-muted);padding:1rem">No products found</div>'
-            : filtered.map(p => `
+            : filtered.map(p => {
+              const isSelected = bulkChecked.includes(p.sku);
+              return `
               <div style="display:flex;align-items:center;padding:.5rem;border-bottom:1px solid var(--border-light);cursor:pointer" onclick="toggleBulkSelect('${p.sku}')">
-                <input type="checkbox" id="bulk-${p.sku}" ${bulkChecked.includes(p.sku) ? 'checked' : ''} style="margin-right:.75rem;cursor:pointer;width:18px;height:18px;flex-shrink:0" onclick="event.stopPropagation()">
+                <div style="width:24px;text-align:center;margin-right:.5rem;font-weight:700;color:var(--primary);font-size:1.1rem;flex-shrink:0">
+                  ${isSelected ? '✓' : ''}
+                </div>
                 <div style="flex:1;pointer-events:none">
                   <div style="font-weight:500">${p.name}</div>
                   <div style="font-size:.75rem;color:var(--text-muted)">${p.sku} • ${p.stock} units</div>
                 </div>
-              </div>`).join('');
+              </div>`;
+            }).join('');
           })()}
         </div>
       </div>
