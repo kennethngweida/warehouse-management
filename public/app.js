@@ -652,10 +652,10 @@ function renderInventory() {
       <div class="card" style="padding:0">
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Product</th><th>SKU</th><th>Category</th><th>Cost Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead>
+            <thead><tr><th>Product</th><th>SKU</th><th>Category</th><th>Supplier</th><th>Cost Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody>
               ${prods.length === 0
-                ? `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">🔍</div><p>No products match your search.</p></div></td></tr>`
+                ? `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">🔍</div><p>No products match your search.</p></div></td></tr>`
                 : prods.map(p => `
                   <tr>
                     <td>
@@ -668,6 +668,7 @@ function renderInventory() {
                     </td>
                     <td><code style="font-size:.75rem;background:var(--border-light);padding:.15rem .4rem;border-radius:4px;color:var(--text-muted)">${p.sku}</code></td>
                     <td><span style="font-size:.8rem;color:var(--text-muted)">${p.category}</span></td>
+                    <td><span style="font-size:.8rem;color:var(--text-muted)">${p.supplier || '—'}</span></td>
                     <td style="font-weight:700;color:var(--primary)">${fmt(p.cost_price)}</td>
                     <td>
                       <div style="display:flex;align-items:center;gap:.5rem">
@@ -727,6 +728,10 @@ function productForm(p = {}) {
       </div>
     </div>
     <div class="form-group">
+      <label>Supplier</label>
+      <input class="form-control" id="pf-supplier" value="${p.supplier||''}" placeholder="e.g. ABC Distributors">
+    </div>
+    <div class="form-group">
       <label>Product Image</label>
       <input class="form-control" id="pf-image" type="file" accept="image/*">
       ${p.image_url ? `<div style="margin-top:.5rem"><img src="${p.image_url}" style="max-width:100px;max-height:100px;border-radius:4px"></div>` : ''}
@@ -764,6 +769,7 @@ async function saveProduct(sku) {
   const category  = el('pf-cat').value;
   const cost_price= parseFloat(el('pf-price').value);
   const stock     = parseInt(el('pf-stock').value);
+  const supplier  = el('pf-supplier').value.trim();
   const imageFile = el('pf-image').files[0];
   let image_url   = el('pf-image-url').value;
 
@@ -780,7 +786,7 @@ async function saveProduct(sku) {
     }
 
     const data = {
-      name, sku: newSku, category, cost_price, stock, image_url,
+      name, sku: newSku, category, cost_price, stock, image_url, supplier,
       description: '',
       min_stock: 10,
       unit: 'units',

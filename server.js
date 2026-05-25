@@ -72,7 +72,7 @@ app.get('/api/products/:sku', async (req, res) => {
 // POST create product
 app.post('/api/products', async (req, res) => {
   try {
-    const { sku, name, category, cost_price, stock, min_stock, image_url } = req.body;
+    const { sku, name, category, cost_price, stock, min_stock, image_url, supplier } = req.body;
     const { data, error } = await supabase
       .from('products')
       .insert([{
@@ -82,7 +82,8 @@ app.post('/api/products', async (req, res) => {
         cost_price: parseFloat(cost_price),
         stock: parseInt(stock),
         min_stock: parseInt(min_stock) || 10,
-        image_url: image_url || null
+        image_url: image_url || null,
+        supplier: supplier || null
       }])
       .select()
       .single();
@@ -96,7 +97,7 @@ app.post('/api/products', async (req, res) => {
 // PUT update product
 app.put('/api/products/:sku', async (req, res) => {
   try {
-    const { name, category, cost_price, stock, min_stock, image_url } = req.body;
+    const { name, category, cost_price, stock, min_stock, image_url, supplier } = req.body;
     const updateObj = {
       name,
       category,
@@ -106,6 +107,9 @@ app.put('/api/products/:sku', async (req, res) => {
     };
     if (image_url !== undefined) {
       updateObj.image_url = image_url;
+    }
+    if (supplier !== undefined) {
+      updateObj.supplier = supplier;
     }
     const { data, error } = await supabase
       .from('products')
