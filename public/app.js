@@ -911,9 +911,9 @@ function renderBulkStock() {
             return filtered.length === 0
             ? '<div style="text-align:center;color:var(--text-muted);padding:1rem">No products found</div>'
             : filtered.map(p => `
-              <div style="display:flex;align-items:center;padding:.5rem;border-bottom:1px solid var(--border-light)">
-                <input type="checkbox" id="bulk-${p.sku}" ${bulkChecked.includes(p.sku) ? 'checked' : ''} onchange="toggleBulkSelect('${p.sku}')" style="margin-right:.75rem;cursor:pointer;width:18px;height:18px;flex-shrink:0">
-                <div style="flex:1;cursor:pointer;pointer-events:none">
+              <div style="display:flex;align-items:center;padding:.5rem;border-bottom:1px solid var(--border-light);cursor:pointer" onclick="toggleBulkSelect('${p.sku}')">
+                <input type="checkbox" id="bulk-${p.sku}" ${bulkChecked.includes(p.sku) ? 'checked' : ''} style="margin-right:.75rem;cursor:pointer;width:18px;height:18px;flex-shrink:0" onclick="event.stopPropagation()">
+                <div style="flex:1;pointer-events:none">
                   <div style="font-weight:500">${p.name}</div>
                   <div style="font-size:.75rem;color:var(--text-muted)">${p.sku} • ${p.stock} units</div>
                 </div>
