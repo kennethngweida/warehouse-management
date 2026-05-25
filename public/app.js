@@ -1306,8 +1306,8 @@ function renderStockHistory() {
                 ? `<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">📈</div><p>No stock movements yet.<br>They'll appear here as stock changes.</p></div></td></tr>`
                 : movements.map(m=>`
                   <tr>
-                    <td style="font-size:.8rem;color:var(--text-muted);white-space:nowrap">${fmtDateTime(m.date)}</td>
-                    <td style="font-weight:600">${m.productName}</td>
+                    <td style="font-size:.8rem;color:var(--text-muted);white-space:nowrap">${fmtDateTime(m.date || m.created_at)}</td>
+                    <td style="font-weight:600">${m.product_name || m.productName || '—'}</td>
                     <td>${m.type==='in'
                       ? '<span class="badge badge-success">↑ IN</span>'
                       : '<span class="badge badge-danger">↓ OUT</span>'}</td>
