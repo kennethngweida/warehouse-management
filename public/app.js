@@ -886,6 +886,17 @@ function renderBulkStock() {
       const checkbox = document.getElementById(`bulk-${sku}`);
       if (checkbox) {
         checkbox.checked = true;
+        checkbox.setAttribute('checked', 'checked');
+      }
+    });
+    // Also uncheck items not in bulkChecked
+    products.forEach(p => {
+      if (!bulkChecked.includes(p.sku)) {
+        const checkbox = document.getElementById(`bulk-${p.sku}`);
+        if (checkbox) {
+          checkbox.checked = false;
+          checkbox.removeAttribute('checked');
+        }
       }
     });
   }, 50);
