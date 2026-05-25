@@ -298,15 +298,20 @@ const Orders = {
   find: (id) => ordersCache.find(o => o.id === id),
 
   create: async (customerId, customerName, items) => {
-    const total = items.reduce((s, i) => s + (i.price || i.cost_price || 0) * i.qty, 0);
+    const total = items.reduce((s, i) => {
+      const price = Number(i.price) || Number(i.cost_price) || 0;
+      const qty = Number(i.qty) || 0;
+      return s + (price * qty);
+    }, 0);
     const order = {
       id: 'ORD-' + Date.now(),
       customer_id: customerId,
       customer_name: customerName,
       items,
-      total,
+      total: Number(total) || 0,
       status: 'pending'
     };
+    console.log('Creating order:', order);
 
     try {
       const res = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(order) });

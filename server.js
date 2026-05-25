@@ -310,6 +310,15 @@ app.get('/api/orders/:id', async (req, res) => {
 app.post('/api/orders', async (req, res) => {
   try {
     const { id, customer_id, customer_name, items, total, status } = req.body;
+    let parsedTotal = parseFloat(total);
+    if (isNaN(parsedTotal) || parsedTotal === null || parsedTotal === undefined) {
+      parsedTotal = (items || []).reduce((s, i) => {
+        const price = parseFloat(i.price) || parseFloat(i.cost_price) || 0;
+        const qty = parseInt(i.qty) || 0;
+        return s + (price * qty);
+      }, 0);
+    }
+    console.log('Creating order with total:', parsedTotal);
     const { data, error } = await supabase
       .from('orders')
       .insert([{
@@ -317,7 +326,7 @@ app.post('/api/orders', async (req, res) => {
         customer_id,
         customer_name,
         items,
-        total: parseFloat(total),
+        total: parsedTotal,
         status: status || 'pending'
       }])
       .select()
@@ -325,6 +334,7 @@ app.post('/api/orders', async (req, res) => {
     if (error) throw error;
     res.status(201).json(data);
   } catch (err) {
+    console.error('Order creation error:', err);
     res.status(400).json({ error: err.message });
   }
 });
