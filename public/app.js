@@ -586,7 +586,7 @@ function renderAdminDashboard() {
                 <tbody>${orders.slice(0,6).map(o => `
                   <tr>
                     <td><code style="font-size:.75rem;background:var(--border-light);padding:.1rem .35rem;border-radius:4px">${o.id.replace('ORD-','')}</code></td>
-                    <td style="font-weight:600">${o.customerName}</td>
+                    <td style="font-weight:600">${o.customer_name}</td>
                     <td style="font-weight:700">${fmt(o.total)}</td>
                     <td>${statusBadge(o.status)}</td>
                   </tr>`).join('')}
@@ -1094,7 +1094,7 @@ const STATUSES = ['pending','processing','shipped','delivered','cancelled'];
 function renderAdminOrders() {
   const all = Orders.all();
   const orders = all.filter(o =>
-    (!ordSearch || o.id.toLowerCase().includes(ordSearch.toLowerCase()) || o.customerName.toLowerCase().includes(ordSearch.toLowerCase())) &&
+    (!ordSearch || o.id.toLowerCase().includes(ordSearch.toLowerCase()) || o.customer_name.toLowerCase().includes(ordSearch.toLowerCase())) &&
     (!ordStatus || o.status === ordStatus)
   );
   const counts = STATUSES.reduce((m,s) => { m[s] = all.filter(o=>o.status===s).length; return m; }, {});
@@ -1134,10 +1134,10 @@ function renderAdminOrders() {
                 : orders.map(o=>`
                   <tr>
                     <td><code style="font-size:.78rem;background:var(--border-light);padding:.15rem .4rem;border-radius:4px;color:var(--text-muted)">${o.id}</code></td>
-                    <td style="font-weight:600">${o.customerName}</td>
+                    <td style="font-weight:600">${o.customer_name}</td>
                     <td style="color:var(--text-muted)">${o.items.length} item${o.items.length!==1?'s':''}</td>
                     <td style="font-weight:700">${fmt(o.total)}</td>
-                    <td style="font-size:.8rem;color:var(--text-muted);white-space:nowrap">${fmtDate(o.createdAt)}</td>
+                    <td style="font-size:.8rem;color:var(--text-muted);white-space:nowrap">${fmtDate(o.created_at)}</td>
                     <td>${statusBadge(o.status)}</td>
                     <td>
                       <div style="display:flex;gap:.35rem;align-items:center;flex-wrap:wrap">
@@ -1172,8 +1172,8 @@ function viewOrder(id) {
     <div class="modal-header"><div class="modal-title">Order ${o.id}</div><button class="modal-close" onclick="closeModal()">×</button></div>
     <div class="modal-body">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.1rem">
-        <div><div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);margin-bottom:.2rem">Customer</div><div style="font-weight:600">${o.customerName}</div></div>
-        <div><div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);margin-bottom:.2rem">Date</div><div style="font-weight:600">${fmtDateTime(o.createdAt)}</div></div>
+        <div><div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);margin-bottom:.2rem">Customer</div><div style="font-weight:600">${o.customer_name}</div></div>
+        <div><div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);margin-bottom:.2rem">Date</div><div style="font-weight:600">${fmtDateTime(o.created_at)}</div></div>
         <div><div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);margin-bottom:.2rem">Status</div><div>${statusBadge(o.status)}</div></div>
         <div><div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);margin-bottom:.2rem">Total</div><div style="font-weight:800;font-size:1.1rem;color:var(--primary)">${fmt(o.total)}</div></div>
       </div>
@@ -1552,7 +1552,7 @@ function renderCustDashboard() {
                   <div style="display:flex;justify-content:space-between;align-items:center;padding:.65rem 0;border-bottom:1px solid var(--border-light)">
                     <div>
                       <div style="font-weight:600;font-size:.82rem">${o.id}</div>
-                      <div style="font-size:.75rem;color:var(--text-muted)">${fmtDate(o.createdAt)}</div>
+                      <div style="font-size:.75rem;color:var(--text-muted)">${fmtDate(o.created_at)}</div>
                     </div>
                     <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:.2rem">
                       ${statusBadge(o.status)}
@@ -1773,7 +1773,7 @@ function renderMyOrders() {
                 <div style="font-weight:700;margin-bottom:.2rem">
                   Order <code style="background:var(--border-light);padding:.1rem .4rem;border-radius:4px;font-size:.82rem">${o.id}</code>
                 </div>
-                <div style="font-size:.8rem;color:var(--text-muted)">${fmtDateTime(o.createdAt)}</div>
+                <div style="font-size:.8rem;color:var(--text-muted)">${fmtDateTime(o.created_at)}</div>
               </div>
               <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.25rem">
                 ${statusBadge(o.status)}
@@ -2214,7 +2214,7 @@ function renderMobileAdminDashboard() {
             <div style="display:flex;justify-content:space-between;align-items:center">
               <div>
                 <div style="font-size:.85rem;font-weight:500">#${o.id.replace('ORD-','')}</div>
-                <div style="font-size:.7rem;color:var(--text-muted)">${o.customerName}</div>
+                <div style="font-size:.7rem;color:var(--text-muted)">${o.customer_name}</div>
               </div>
               <span style="font-weight:700;color:var(--primary);font-size:.9rem">${fmt(o.total)}</span>
             </div>`).join('')}
@@ -2359,7 +2359,7 @@ function renderMobileAdminOrders() {
             <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:.75rem">
               <div>
                 <div style="font-weight:600">#${o.id.replace('ORD-','')}</div>
-                <div style="font-size:.8rem;color:var(--text-muted)">${o.customerName}</div>
+                <div style="font-size:.8rem;color:var(--text-muted)">${o.customer_name}</div>
               </div>
               ${statusBadge(o.status)}
             </div>
@@ -2612,7 +2612,7 @@ function renderMobileMyOrders() {
               ${statusBadge(o.status)}
             </div>
             <div style="display:flex;justify-content:space-between;font-size:.8rem;color:var(--text-muted);margin-bottom:.5rem">
-              <span>${fmtDate(o.createdAt)}</span>
+              <span>${fmtDate(o.created_at)}</span>
               <span>${o.items.length} item${o.items.length!==1?'s':''}</span>
             </div>
             <div style="font-weight:700;color:var(--primary);font-size:1.1rem">${fmt(o.total)}</div>
@@ -2742,7 +2742,7 @@ function viewMobileOrderDetails(orderId) {
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
           <div>
             <div style="font-weight:600;font-size:1rem">Order #${order.id.replace('ORD-','')}</div>
-            <div style="font-size:.8rem;color:var(--text-muted)">${fmtDate(order.createdAt)}</div>
+            <div style="font-size:.8rem;color:var(--text-muted)">${fmtDate(order.created_at)}</div>
           </div>
           ${statusBadge(order.status)}
         </div>
@@ -2772,7 +2772,7 @@ function viewMobileOrderDetails(orderId) {
 
       <div class="card">
         <div style="font-weight:600;margin-bottom:.75rem">Customer</div>
-        <div style="font-weight:500;margin-bottom:.25rem">${order.customerName}</div>
+        <div style="font-weight:500;margin-bottom:.25rem">${order.customer_name}</div>
         <div style="font-size:.8rem;color:var(--text-muted)">${order.customer_id}</div>
       </div>
 
