@@ -881,6 +881,13 @@ function renderBulkStock() {
   const products = Products.all();
   const cats = [...new Set(products.map(p => p.category))];
 
+  setTimeout(() => {
+    bulkChecked.forEach(sku => {
+      const checkbox = el(`bulk-${sku}`);
+      if (checkbox) checkbox.checked = true;
+    });
+  }, 0);
+
   set('admin-content', `
     <div class="page">
       <div class="page-header">
