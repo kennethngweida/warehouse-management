@@ -90,6 +90,7 @@ function routeDesktop() {
       'admin-orders':    renderAdminOrders,
       'stock-history':   renderStockHistory,
       'admin-users':     renderAdminUsers,
+      'suppliers':       renderSuppliers,
       'admin-profile':   renderAdminProfile,
     };
     (views[currentView] || (() => { currentView = 'admin-dashboard'; renderAdminDashboard(); }))();
@@ -482,6 +483,7 @@ function renderSidebar(role) {
         { view: 'admin-orders',    icon: '🧾', label: 'Orders' },
         { view: 'stock-history',   icon: '📈', label: 'Stock History' },
         { view: 'admin-users',     icon: '👥', label: 'Users' },
+        { view: 'suppliers',       icon: '🚚', label: 'Suppliers' },
         { view: 'admin-profile',   icon: '⚙️', label: 'Settings' },
       ]
     : [
@@ -729,7 +731,11 @@ function productForm(p = {}) {
     </div>
     <div class="form-group">
       <label>Supplier</label>
-      <input class="form-control" id="pf-supplier" value="${p.supplier||''}" placeholder="e.g. ABC Distributors">
+      <select class="form-control" id="pf-supplier">
+        <option value="">— Select supplier —</option>
+        ${Suppliers.all().map(s => `<option value="${s.name}" ${p.supplier === s.name ? 'selected' : ''}>${s.name}</option>`).join('')}
+      </select>
+      <div style="font-size:.75rem;color:var(--text-muted);margin-top:.25rem">Manage suppliers in the Suppliers tab</div>
     </div>
     <div class="form-group">
       <label>Product Image</label>
@@ -1352,6 +1358,137 @@ function renderStockHistory() {
       </div>
     </div>
   `);
+}
+
+// ── Suppliers Management ─────────────────────────────────────
+function renderSuppliers() {
+  const suppliers = Suppliers.all();
+  set('admin-content', `
+    <div class="page">
+      <div class="page-header">
+        <div class="page-header-text">
+          <div class="page-title">Suppliers</div>
+          <div class="page-sub">${suppliers.length} suppliers</div>
+        </div>
+        <button class="btn btn-primary" onclick="openAddSupplier()">+ Add Supplier</button>
+      </div>
+
+      <div class="card" style="padding:0">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Name</th><th>Contact</th><th>Notes</th><th>Actions</th></tr></thead>
+            <tbody>
+              ${suppliers.length === 0
+                ? `<tr><td colspan="4"><div class="empty-state"><div class="empty-icon">🚚</div><p>No suppliers yet.<br>Click "+ Add Supplier" to get started.</p></div></td></tr>`
+                : suppliers.map(s => `
+                  <tr>
+                    <td style="font-weight:600">${s.name}</td>
+                    <td style="font-size:.85rem;color:var(--text-muted)">${s.contact || '—'}</td>
+                    <td style="font-size:.85rem;color:var(--text-muted)">${s.notes || '—'}</td>
+                    <td>
+                      <div style="display:flex;gap:.35rem">
+                        <button class="btn btn-outline btn-sm" onclick="openEditSupplier('${s.id}')">Edit</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteSupplier('${s.id}')">🗑</button>
+                      </div>
+                    </td>
+                  </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `);
+}
+
+function supplierForm(s = {}) {
+  return `
+    <div class="form-group">
+      <label>Supplier Name *</label>
+      <input class="form-control" id="sf-name" value="${s.name||''}" placeholder="e.g. ABC Distributors">
+    </div>
+    <div class="form-group">
+      <label>Contact (phone/email)</label>
+      <input class="form-control" id="sf-contact" value="${s.contact||''}" placeholder="e.g. +65 1234 5678 or contact@abc.com">
+    </div>
+    <div class="form-group">
+      <label>Notes</label>
+      <input class="form-control" id="sf-notes" value="${s.notes||''}" placeholder="Any additional notes">
+    </div>
+  `;
+}
+
+function openAddSupplier() {
+  showModal(`
+    <div class="modal-header"><div class="modal-title">Add Supplier</div><button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="modal-body"><div id="supplier-error"></div>${supplierForm()}</div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSupplier(null)">Add Supplier</button>
+    </div>
+  `);
+}
+
+function openEditSupplier(id) {
+  const s = Suppliers.find(id); if (!s) return;
+  showModal(`
+    <div class="modal-header"><div class="modal-title">Edit Supplier</div><button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="modal-body"><div id="supplier-error"></div>${supplierForm(s)}</div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSupplier('${id}')">Save Changes</button>
+    </div>
+  `);
+}
+
+async function saveSupplier(id) {
+  const name = el('sf-name').value.trim();
+  const contact = el('sf-contact').value.trim();
+  const notes = el('sf-notes').value.trim();
+
+  if (!name) {
+    set('supplier-error','<div class="alert alert-error">⚠️ Please enter a supplier name.</div>'); return;
+  }
+
+  try {
+    if (id) {
+      await Suppliers.update(id, { name, contact, notes });
+      toast('Supplier updated!','success');
+    } else {
+      const result = await Suppliers.create(name, contact, notes);
+      if (result.error) {
+        set('supplier-error',`<div class="alert alert-error">⚠️ ${result.error}</div>`); return;
+      }
+      toast('Supplier added!','success');
+    }
+    closeModal(); renderSuppliers();
+  } catch (err) {
+    set('supplier-error',`<div class="alert alert-error">⚠️ ${err.message}</div>`);
+  }
+}
+
+function deleteSupplier(id) {
+  const s = Suppliers.find(id); if (!s) return;
+  showModal(`
+    <div class="modal-header"><div class="modal-title">Delete Supplier</div><button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="modal-body">
+      <p>Are you sure you want to delete <strong>${s.name}</strong>?</p>
+      <p style="margin-top:.5rem;font-size:.875rem;color:var(--text-muted)">This action cannot be undone.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDeleteSupplier('${id}')">Delete</button>
+    </div>
+  `);
+}
+
+async function confirmDeleteSupplier(id) {
+  try {
+    await Suppliers.delete(id);
+    toast('Supplier deleted','warning');
+    closeModal(); renderSuppliers();
+  } catch (err) {
+    toast(`Error: ${err.message}`,'error');
+  }
 }
 
 // ════════════════════════════════════════════════════════

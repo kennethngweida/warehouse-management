@@ -40,6 +40,7 @@ let productsCache = [];
 let usersCache = [];
 let ordersCache = [];
 let movementsCache = [];
+let suppliersCache = [];
 
 // ── Seed data ────────────────────────────────────────────────
 const SEED_PRODUCTS = [
@@ -112,11 +113,62 @@ async function seedIfEmpty() {
     if (Array.isArray(movements)) { movementsCache = movements; }
   } catch (e) { console.warn('Could not fetch movements:', e.message); }
 
+  // Load suppliers from API
+  try {
+    const suppliers = await fetch('/api/suppliers').then(r => r.json());
+    if (Array.isArray(suppliers)) { suppliersCache = suppliers; }
+  } catch (e) { console.warn('Could not fetch suppliers:', e.message); }
+
   // Mark as seeded
   if (!DB.get('wm_seeded')) {
     DB.set('wm_seeded', true);
   }
 }
+
+// ── Supplier API ─────────────────────────────────────────────
+const Suppliers = {
+  all: () => suppliersCache,
+  find: (id) => suppliersCache.find(s => s.id === id),
+
+  create: async (name, contact, notes) => {
+    if (suppliersCache.find(s => s.name.toLowerCase() === name.toLowerCase())) {
+      return { error: 'Supplier name already exists.' };
+    }
+    const supplier = { id: 's' + Date.now(), name, contact, notes };
+    try {
+      const res = await fetch('/api/suppliers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(supplier) });
+      if (!res.ok) throw new Error(await res.text());
+      const created = await res.json();
+      suppliersCache.push(created);
+      return { supplier: created };
+    } catch (err) {
+      return { error: err.message };
+    }
+  },
+
+  update: async (id, data) => {
+    try {
+      const res = await fetch(`/api/suppliers/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+      if (!res.ok) throw new Error(await res.text());
+      const updated = await res.json();
+      const idx = suppliersCache.findIndex(s => s.id === id);
+      if (idx >= 0) suppliersCache[idx] = updated;
+      return updated;
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  delete: async (id) => {
+    try {
+      const res = await fetch(`/api/suppliers/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(await res.text());
+      suppliersCache = suppliersCache.filter(s => s.id !== id);
+    } catch (err) {
+      throw err;
+    }
+  },
+};
 
 // ── User API ─────────────────────────────────────────────────
 const Users = {

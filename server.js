@@ -346,6 +346,74 @@ app.put('/api/orders/:id', async (req, res) => {
   }
 });
 
+// ── Supplier API Routes ──────────────────────────────────
+
+// GET all suppliers
+app.get('/api/suppliers', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('suppliers')
+      .select('*')
+      .order('name', { ascending: true });
+    if (error) throw error;
+    res.json(data || []);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST create supplier
+app.post('/api/suppliers', async (req, res) => {
+  try {
+    const { id, name, contact, notes } = req.body;
+    const { data, error } = await supabase
+      .from('suppliers')
+      .insert([{
+        id: id || 's' + Date.now(),
+        name,
+        contact: contact || null,
+        notes: notes || null
+      }])
+      .select()
+      .single();
+    if (error) throw error;
+    res.status(201).json(data);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// PUT update supplier
+app.put('/api/suppliers/:id', async (req, res) => {
+  try {
+    const { name, contact, notes } = req.body;
+    const { data, error } = await supabase
+      .from('suppliers')
+      .update({ name, contact, notes })
+      .eq('id', req.params.id)
+      .select()
+      .single();
+    if (error) throw error;
+    res.json(data);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// DELETE supplier
+app.delete('/api/suppliers/:id', async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from('suppliers')
+      .delete()
+      .eq('id', req.params.id);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 // ── Stock Movement API Routes ───────────────────────────
 
 // GET all movements
